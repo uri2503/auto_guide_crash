@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>CrashGuide · Unfall? Richtig entscheiden.</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@700;800&display=swap');
+
+:root {
+  --black:#0a0a0a; --ink:#111; --surface:#161616; --card:#1c1c1c;
+  --border:#2a2a2a; --muted:#3a3a3a;
+  --white:#f5f5f0; --grey:#888; --grey-light:#bbb;
+  --signal:#ff4d00; --signal-dim:rgba(255,77,0,.12); --signal-glow:rgba(255,77,0,.25);
+  --green:#00c96e; --green-dim:rgba(0,201,110,.1);
+  --amber:#f0a500; --amber-dim:rgba(240,165,0,.1);
+  --blue:#3b82f6;
+  --font-display:'Syne',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --r:8px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--white);font-family:var(--font-body);font-size:15px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+
+/* ── TYPOGRAPHY ── */
+h1,h2,h3{font-family:var(--font-display)}
+.display{font-size:clamp(2.2rem,6vw,3.8rem);font-weight:800;line-height:1.05;letter-spacing:-.02em}
+.display em{font-style:normal;color:var(--signal)}
+.label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);font-weight:500}
+
+/* ── LAYOUT ── */
+.container{max-width:780px;margin:0 auto;padding:0 20px}
+section{padding:48px 0}
+
+/* ── HERO ── */
+#hero{padding:64px 0 48px;border-bottom:1px solid var(--border)}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--signal-dim);border:1px solid var(--signal-glow);border-radius:100px;padding:5px 14px;margin-bottom:28px}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--signal);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-eyebrow span{font-size:11.5px;color:var(--signal);letter-spacing:.06em;font-weight:500}
+.hero-sub{font-size:17px;color:var(--grey-light);margin-top:18px;max-width:520px;font-weight:300;line-height:1.6}
+.hero-badges{display:flex;gap:8px;margin-top:28px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:6px 14px;font-size:12.5px;color:var(--grey-light)}
+.badge svg{width:14px;height:14px;flex-shrink:0}
+
+/* ── PROGRESS ── */
+.progress-track{display:flex;align-items:center;gap:0;margin-bottom:40px}
+.progress-step{display:flex;align-items:center;gap:8px}
+.progress-step .num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;transition:all .3s}
+.progress-step .num.active{background:var(--signal);color:#fff}
+.progress-step .num.done{background:var(--green);color:#000}
+.progress-step .num.inactive{background:var(--muted);color:var(--grey)}
+.progress-step .stxt{font-size:12px;color:var(--grey);white-space:nowrap}
+.progress-step .stxt.active{color:var(--white);font-weight:500}
+.progress-line{flex:1;height:1px;background:var(--border);margin:0 8px;min-width:16px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+.card-title{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:.04em;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--signal);border-radius:2px;flex-shrink:0}
+
+/* ── FORM ELEMENTS ── */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-size:12px;color:var(--grey-light);font-weight:500;letter-spacing:.04em}
+.field input,.field select{background:var(--surface);border:1px solid var(--border);color:var(--white);padding:10px 12px;border-radius:6px;font-family:var(--font-body);font-size:14px;width:100%;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:var(--signal)}
+.field input::placeholder{color:var(--grey)}
+.field select option{background:var(--surface)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ── RADIO PILLS ── */
+.pill-group{display:flex;gap:8px;flex-wrap:wrap}
+.pill{background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:7px 16px;font-size:13px;color:var(--grey-light);cursor:pointer;transition:all .15s;user-select:none}
+.pill:hover{border-color:var(--signal);color:var(--white)}
+.pill.active{background:var(--signal-dim);border-color:var(--signal);color:var(--white)}
+.pill input{display:none}
+
+/* ── PHOTO UPLOAD ── */
+.upload-zone{border:1.5px dashed var(--border);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--surface)}
+.upload-zone:hover{border-color:var(--signal);background:var(--signal-dim)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:28px;margin-bottom:8px;opacity:.5}
+.upload-text{font-size:13px;color:var(--grey)}
+.upload-text strong{color:var(--grey-light)}
+.img-preview{margin-top:12px;display:none}
+.img-preview img{width:100%;border-radius:6px;display:block}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:6px;font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .18s;text-decoration:none}
+.btn-primary{background:var(--signal);color:#fff}
+.btn-primary:hover{background:#e04400;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;color:var(--grey-light);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--grey);color:var(--white)}
+.btn-full{width:100%}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── AI RESULT ── */
+.ai-box{background:var(--signal-dim);border:1px solid var(--signal-glow);border-radius:var(--r);padding:14px 16px;font-size:13px;line-height:1.7;color:var(--grey-light);display:none}
+.ai-box strong{color:var(--signal);font-size:10px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px}
+
+/* ── RESULT SCREEN ── */
+#result{display:none}
+.result-header{text-align:center;padding:32px 0 24px}
+.result-header .label{margin-bottom:12px}
+.result-header h2{font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.1}
+
+.scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:28px 0}
+@media(max-width:600px){.scenario-grid{grid-template-columns:1fr}}
+
+.scenario{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:18px 16px;text-align:center;transition:all .2s;position:relative}
+.scenario.winner{border-color:var(--green);background:var(--green-dim)}
+.scenario.winner::before{content:'EMPFEHLUNG';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 10px;border-radius:100px}
+.scenario.warning{border-color:var(--amber)}
+.scenario.danger{border-color:var(--signal)}
+.scenario-icon{font-size:22px;margin-bottom:8px}
+.scenario-label{font-size:11px;color:var(--grey);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.scenario-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:12px}
+.scenario-cost{font-size:24px;font-weight:700;font-family:var(--font-display);margin-bottom:4px}
+.scenario-cost.green{color:var(--green)}
+.scenario-cost.amber{color:var(--amber)}
+.scenario-cost.red{color:var(--signal)}
+.scenario-detail{font-size:11.5px;color:var(--grey);line-height:1.6}
+
+.breakdown{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-top:20px}
+.breakdown h3{font-family:var(--font-display);font-size:13px;letter-spacing:.06em;color:var(--grey);text-transform:uppercase;margin-bottom:14px}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.breakdown-row:last-child{border-bottom:none;padding-top:12px;margin-top:4px}
+.breakdown-row.total{font-weight:600;font-size:14px}
+.breakdown-row .key{color:var(--grey-light)}
+.breakdown-row .val{font-weight:500}
+.breakdown-row .val.red{color:var(--signal)}
+.breakdown-row .val.green{color:var(--green)}
+.breakdown-row .val.amber{color:var(--amber)}
+
+.disclaimer{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-size:11.5px;color:var(--grey);line-height:1.6;margin-top:16px}
+.disclaimer strong{color:var(--grey-light)}
+
+.action-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);border-left:3px solid var(--signal);color:var(--white);padding:12px 20px;border-radius:6px;font-size:13px;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── MOBILE ── */
+@media(max-width:500px){
+  .field-row,.field-row-3{grid-template-columns:1fr}
+  .hero-badges{gap:6px}
+  section{padding:32px 0}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div id="keyScreen" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9999;align-items:center;justify-content:center;padding:20px"><div style="background:#1c1c1c;border:1px solid #2a2a2a;border-top:3px solid #ff4d00;border-radius:10px;padding:32px 28px;max-width:420px;width:100%"><div style="font-family:Syne,sans-serif;font-size:24px;font-weight:800;color:#f5f5f0;margin-bottom:4px">CrashGuide</div><div style="font-size:11px;color:#888;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px">KI-Analyse Einrichtung</div><p style="font-size:13.5px;color:#bbb;line-height:1.7;margin-bottom:22px">Fuer die KI-Schadensanalyse wird ein Anthropic API Key benoetigt. Der Key wird ausschliesslich in deinem Browser gespeichert.</p><div style="margin-bottom:16px"><label style="font-size:11px;color:#888;display:block;margin-bottom:6px">ANTHROPIC API KEY</label><input id="keyInput" type="password" placeholder="sk-ant-..." style="width:100%;background:#111;border:1px solid #2a2a2a;color:#f5f5f0;padding:11px 12px;border-radius:6px;font-size:13px;font-family:monospace;outline:none" onkeydown="if(event.key==='Enter')submitApiKey()"><div id="keyError" style="font-size:11.5px;color:#ff4d00;margin-top:6px;min-height:16px"></div></div><button onclick="submitApiKey()" style="width:100%;background:#ff4d00;color:#fff;border:none;padding:12px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Key speichern und starten</button><div style="margin-top:16px;padding-top:16px;border-top:1px solid #2a2a2a"><button onclick="skipKey()" style="background:none;border:none;color:#555;font-size:12px;cursor:pointer;text-decoration:underline;padding:0">Ohne KI-Analyse fortfahren</button></div></div></div>
+<div id="mainContent">
+<section id="hero">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="hero-eyebrow" style="margin-bottom:0">
+      <div class="hero-dot"></div>
+      <span>Kostenlose Erstanalyse</span>
+    </div>
+      <button onclick="changeApiKey()" 
+        style="background:var(--card);border:1px solid var(--border);color:var(--grey-light);padding:7px 14px;border-radius:6px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-body)"
+        title="API Key ändern">
+        🔑 <span style="font-size:11px">API Key</span>
+      </button>
+    </div>
+    <h1 class="display">Unfall.<br><em>Was kostet mich das wirklich?</em></h1>
+    <p class="hero-sub">Foto hochladen, Versicherungsdaten eingeben — und in 60 Sekunden weißt du ob sich die Meldung an deine Versicherung lohnt.</p>
+    <div class="hero-badges">
+      <div class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        KI-Schadensschätzung
+      </div>
+      <div class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        SF-Rückstufung exakt
+      </div>
+      <div class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Erste Analyse gratis
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EINGABE -->
+<section id="inputSection">
+  <div class="container">
+
+    <!-- PROGRESS -->
+    <div class="progress-track">
+      <div class="progress-step">
+        <div class="num active" id="p1">1</div>
+        <span class="stxt active">Schaden</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="num inactive" id="p2">2</div>
+        <span class="stxt" id="p2t">Fahrzeug</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="num inactive" id="p3">3</div>
+        <span class="stxt" id="p3t">Versicherung</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="num inactive" id="p4">4</div>
+        <span class="stxt" id="p4t">Ergebnis</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: SCHADEN -->
+    <div id="step1">
+      <div class="card">
+        <div class="card-title">Schadensfoto & Erstschätzung</div>
+
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" accept="image/*" onchange="handlePhoto(event)">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text"><strong>Foto des Schadens</strong> auswählen oder ablegen</div>
+        </div>
+        <div class="img-preview" id="imgPreview"><img id="previewImg" src="" alt=""></div>
+
+        <!-- WERKSTATTTYP -->
+        <div style="margin:18px 0 4px">
+          <div class="label" style="margin-bottom:10px">Werkstatttyp</div>
+          <div class="pill-group" id="werkstattGroup">
+            <label class="pill active" id="wt_frei">
+              <input type="radio" name="werkstatt" value="frei" checked onchange="setWerkstatt(this)">
+              🔧 Freie Werkstatt
+            </label>
+            <label class="pill" id="wt_marke">
+              <input type="radio" name="werkstatt" value="marke" onchange="setWerkstatt(this)">
+              🏢 Markenwerkstatt
+            </label>
+            <label class="pill" id="wt_spezi">
+              <input type="radio" name="werkstatt" value="spezi" onchange="setWerkstatt(this)">
+              ⭐ Oldtimer/Spezialist
+            </label>
+          </div>
+          <div id="werkstattInfo" style="font-size:11.5px;color:var(--grey);margin-top:8px">
+            Ø Stundensatz: <strong style="color:var(--grey-light)">~€85/h</strong> — beeinflusst die KI-Schätzung
+          </div>
+        </div>
+
+        <div style="margin:14px 0 10px;display:flex;align-items:center;gap:10px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:12px;color:var(--grey)">oder manuell eingeben</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+
+        <div class="field">
+          <label>Geschätzter Reparaturbetrag (€)</label>
+          <input type="number" id="schadenBetrag" placeholder="z.B. 800" min="0" oninput="syncManualInput()">
+        </div>
+
+        <div style="font-size:11px;color:var(--grey);margin-top:8px;display:flex;align-items:center;gap:5px" id="photoPrivacy" style="display:none">
+          🔒 Das Foto wird nur für diese Analyse verwendet und nicht gespeichert.
+        </div>
+        <div id="aiSection" style="display:none">
+          <button class="btn btn-primary btn-full" id="btnAnalyse" onclick="analysePhoto()">
+            KI-Schadenanalyse starten
+          </button>
+          <div class="ai-box" id="aiBox">
+            <strong>KI-Analyse</strong>
+            <span id="aiText"></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="goStep(2)">Weiter → Fahrzeug</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: FAHRZEUG -->
+    <div id="step2" style="display:none">
+      <div class="card">
+        <div class="card-title">Fahrzeugdaten</div>
+        <div class="field" id="schadenFeld2" style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)">
+          <label>Schadenbetrag (€) — falls noch nicht eingegeben</label>
+          <input type="number" id="schadenBetrag2" placeholder="z.B. 800" min="0"
+            oninput="document.getElementById('schadenBetrag').value=this.value">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Marke & Modell</label>
+            <input type="text" id="fahrzeugModell" placeholder="z.B. VW Golf">
+          </div>
+          <div class="field">
+            <label>Baujahr</label>
+            <input type="number" id="fahrzeugBaujahr" placeholder="z.B. 2018" min="1990" max="2025">
+          </div>
+        </div>
+        <div class="field">
+          <label>Aktueller Fahrzeugwert (€)</label>
+          <input type="number" id="fahrzeugWert" placeholder="z.B. 15000" min="0">
+        </div>
+        <div style="margin-top:6px">
+          <div class="label" style="margin-bottom:8px">Wertminderung durch nicht reparierten Schaden</div>
+          <div id="wertminderungBox" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;color:var(--grey)">
+            Fahrzeugwert eingeben um die Wertminderung zu berechnen.
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;justify-content:space-between">
+        <button class="btn btn-ghost" onclick="goStep(1)">← Zurück</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Weiter → Versicherung</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: VERSICHERUNG -->
+    <div id="step3" style="display:none">
+      <div class="card">
+        <div class="card-title">Versicherungsdaten</div>
+
+        <div class="field">
+          <label>Versicherer</label>
+          <select id="versicherer">
+            <option value="huk">HUK-COBURG / HUK24</option>
+            <option value="allianz">Allianz</option>
+            <option value="vhv">VHV</option>
+            <option value="axa">AXA</option>
+            <option value="devk">DEVK</option>
+            <option value="rv">R+V</option>
+            <option value="adac">ADAC</option>
+            <option value="zurich">Zurich</option>
+            <option value="sonstige">Sonstiger Versicherer</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Versicherungsart</label>
+            <select id="versArt">
+              <option value="haftpflicht">Nur Haftpflicht</option>
+              <option value="vollkasko" selected>Vollkasko</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Aktuelle SF-Klasse</label>
+            <select id="sfKlasse">
+              <option value="M">M (Malus)</option>
+              <option value="0">SF 0</option>
+              <option value="0.5">SF ½</option>
+              <option value="1">SF 1</option>
+              <option value="2">SF 2</option>
+              <option value="3">SF 3</option>
+              <option value="4">SF 4</option>
+              <option value="5">SF 5</option>
+              <option value="6">SF 6</option>
+              <option value="7">SF 7</option>
+              <option value="8">SF 8</option>
+              <option value="9">SF 9</option>
+              <option value="10" selected>SF 10</option>
+              <option value="11">SF 11</option>
+              <option value="12">SF 12</option>
+              <option value="13">SF 13</option>
+              <option value="14">SF 14</option>
+              <option value="15">SF 15</option>
+              <option value="16">SF 16</option>
+              <option value="17">SF 17</option>
+              <option value="18">SF 18</option>
+              <option value="19">SF 19</option>
+              <option value="20">SF 20</option>
+              <option value="21">SF 21</option>
+              <option value="22">SF 22</option>
+              <option value="23">SF 23</option>
+              <option value="24">SF 24</option>
+              <option value="25">SF 25</option>
+              <option value="26">SF 26</option>
+              <option value="27">SF 27</option>
+              <option value="28">SF 28</option>
+              <option value="29">SF 29</option>
+              <option value="30">SF 30</option>
+              <option value="35">SF 35</option>
+              <option value="40">SF 40</option>
+              <option value="45">SF 45</option>
+              <option value="50">SF 50</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Aktueller Versicherungsbeitrag</label>
+            <input type="number" id="beitrag" placeholder="z.B. 600" min="0">
+          </div>
+          <div class="field">
+            <label>Zahlungsrhythmus</label>
+            <select id="rhythmus">
+              <option value="1">Jährlich</option>
+              <option value="2">Halbjährlich</option>
+              <option value="4">Vierteljährlich</option>
+              <option value="12">Monatlich</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Selbstbeteiligung (€)</label>
+          <input type="number" id="selbstbeteiligung" placeholder="z.B. 300" min="0" value="300">
+        </div>
+
+        <div class="field" id="rabattschutzField">
+          <label>Rabattschutz vorhanden?</label>
+          <div class="pill-group">
+            <label class="pill" id="rsNein"><input type="radio" name="rs" value="nein" checked onchange="updateRS()">Nein</label>
+            <label class="pill" id="rsJa"><input type="radio" name="rs" value="ja" onchange="updateRS()">Ja — 1 Schaden pro Jahr frei</label>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;display:flex;justify-content:space-between">
+        <button class="btn btn-ghost" onclick="goStep(2)">← Zurück</button>
+        <button class="btn btn-primary" onclick="berechne()">Ergebnis berechnen →</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ERGEBNIS -->
+<section id="result">
+  <div class="container">
+
+    <div class="result-header">
+      <div class="label">Deine Entscheidungshilfe</div>
+      <h2 id="resultHeadline">Ergebnis</h2>
+    </div>
+
+    <div class="scenario-grid" id="scenarioGrid"></div>
+
+    <div class="breakdown" id="breakdownBox"></div>
+
+    <div style="background:rgba(255,77,0,.08);border:1px solid rgba(255,77,0,.2);border-radius:8px;padding:14px 16px;margin-top:16px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--signal);font-weight:600;margin-bottom:6px">⚠ Wichtiger Hinweis</div>
+      <div style="font-size:12.5px;color:var(--grey-light);line-height:1.7">
+        Diese Berechnung ist eine <strong style="color:var(--white)">unverbindliche Orientierungshilfe</strong> — kein Kostenvoranschlag, kein Gutachten und keine Versicherungsberatung. Tatsächliche Reparaturkosten können je nach Schadensumfang und Werkstatt abweichen. Rückstufungstabellen basieren auf öffentlichen Angaben der Versicherer (Stand 2025/2026) und können tarifabhängig variieren.<br><br>
+        🔒 <strong style="color:var(--white)">Datenschutz:</strong> Hochgeladene Fotos werden ausschließlich für die KI-Analyse verwendet und nicht gespeichert oder weitergegeben.
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-ghost" onclick="resetApp()" style="flex:1">← Neue Berechnung</button><button class="btn btn-ghost" onclick="changeApiKey()" style="padding:12px 16px" title="API Key ändern">🔑</button>
+      <button class="btn btn-primary" onclick="exportPDF()" style="flex:1">⬇ Als PDF speichern</button>
+    </div>
+
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  WERKSTATTTYP
+// ═══════════════════════════════════════════════
+const WERKSTATT = {
+  frei:  { label:'Freie Werkstatt',      stundensatz:85,  faktor:1.0 },
+  marke: { label:'Markenwerkstatt',      stundensatz:125, faktor:1.45 },
+  spezi: { label:'Oldtimer/Spezialist',  stundensatz:160, faktor:1.85 },
+};
+let currentWerkstatt = 'frei';
+
+function setWerkstatt(el) {
+  currentWerkstatt = el.value;
+  // Update pills
+  Object.keys(WERKSTATT).forEach(k => {
+    const pill = document.getElementById('wt_' + k);
+    if (pill) pill.classList.toggle('active', k === el.value);
+  });
+  // Update info text
+  const w = WERKSTATT[el.value];
+  const info = document.getElementById('werkstattInfo');
+  if (info) info.innerHTML = `Ø Stundensatz: <strong style="color:var(--grey-light)">~€${w.stundensatz}/h</strong> — beeinflusst die KI-Schätzung`;
+}
+
+// ═══════════════════════════════════════════════
+//  API KEY
+// ═══════════════════════════════════════════════
+function getApiKey() { return localStorage.getItem('cg_api_key') || ''; }
+function saveApiKey(k) { localStorage.setItem('cg_api_key', k.trim()); }
+
+// ═══════════════════════════════════════════════
+//  RÜCKSTUFUNGSTABELLEN  (1 Schaden, Haftpflicht + Vollkasko)
+//  Quelle: HUK.de, kfz-versicherung.co (2025/2026)
+// ═══════════════════════════════════════════════
+const TABLES = {
+  huk: {
+    name: 'HUK-COBURG / HUK24',
+    // Classic-Tarif Haftpflicht: {vonSF: nachSF}
+    hp: {50:26,49:21,48:21,47:20,46:20,45:20,44:19,43:19,42:18,41:18,40:17,39:17,38:17,37:16,36:16,35:15,34:15,33:14,32:14,31:14,30:13,29:13,28:12,27:12,26:11,25:11,24:10,23:10,22:9,21:9,20:8,19:8,18:7,17:7,16:6,15:6,14:5,13:5,12:4,11:4,10:3,9:3,8:2,7:2,6:1,5:1,4:0.5,3:0.5,2:0.5,1:0,0.5:0,0:'M'},
+    // Classic-Tarif Vollkasko
+    vk: {50:36,49:31,48:30,47:30,46:29,45:28,44:27,43:27,42:26,41:25,40:25,39:24,38:23,37:23,36:22,35:21,34:21,33:20,32:19,31:19,30:18,29:17,28:17,27:16,26:15,25:14,24:14,23:13,22:12,21:12,20:11,19:10,18:9,17:9,16:8,15:7,14:7,13:6,12:5,11:4,10:4,9:3,8:2,7:2,6:1,5:0.5,4:0.5,3:0.5,2:0,1:0,0.5:0,0:'M'},
+  },
+  allianz: {
+    name: 'Allianz',
+    hp: {50:30,49:26,48:25,47:25,46:24,45:23,44:22,43:22,42:21,41:21,40:20,39:20,38:19,37:18,36:18,35:17,34:17,33:16,32:15,31:15,30:14,29:13,28:12,27:11,26:11,25:10,24:9,23:9,22:8,21:8,20:7,19:7,18:7,17:6,16:6,15:5,14:4,13:4,12:3,11:2,10:2,9:2,8:1,7:1,6:1,5:0.5,4:0.5,3:0.5,2:'S',1:'S',0.5:0,0:'M'},
+    vk: {50:40,49:35,48:34,47:33,46:32,45:32,44:31,43:30,42:30,41:29,40:29,39:28,38:28,37:27,36:27,35:26,34:25,33:24,32:23,31:21,30:19,29:18,28:16,27:15,26:14,25:12,24:11,23:10,22:9,21:9,20:8,19:7,18:6,17:6,16:5,15:4,14:4,13:3,12:3,11:2,10:2,9:2,8:2,7:1,6:1,5:1,4:1,3:0.5,2:0.5,1:0.5,0.5:0,0:'M'},
+  },
+  vhv: {
+    name: 'VHV',
+    hp: {50:26,49:21,48:21,47:20,46:20,45:20,44:19,43:19,42:18,41:18,40:17,39:17,38:17,37:16,36:16,35:15,34:15,33:14,32:14,31:14,30:13,29:13,28:12,27:12,26:11,25:11,24:10,23:10,22:9,21:9,20:8,19:8,18:7,17:7,16:6,15:6,14:5,13:5,12:4,11:4,10:3,9:3,8:2,7:2,6:1,5:1,4:0.5,3:0.5,2:0.5,1:0,0.5:0,0:'M'},
+    vk: {50:36,49:31,48:30,47:30,46:29,45:28,44:27,43:27,42:26,41:25,40:25,39:24,38:23,37:23,36:22,35:21,34:21,33:20,32:19,31:19,30:18,29:17,28:17,27:16,26:15,25:14,24:14,23:13,22:12,21:12,20:11,19:10,18:9,17:9,16:8,15:7,14:7,13:6,12:5,11:4,10:4,9:3,8:2,7:2,6:1,5:0.5,4:0.5,3:0.5,2:0,1:0,0.5:0,0:'M'},
+  },
+  // AXA, DEVK, R+V, ADAC, Zurich: Branchendurchschnitt (ähnlich HUK, leicht milder bei VK)
+  axa:    { name:'AXA',    hp:null, vk:null },
+  devk:   { name:'DEVK',   hp:null, vk:null },
+  rv:     { name:'R+V',    hp:null, vk:null },
+  adac:   { name:'ADAC',   hp:null, vk:null },
+  zurich: { name:'Zurich', hp:null, vk:null },
+  sonstige:{ name:'Sonstiger Versicherer', hp:null, vk:null },
+};
+
+// Branchendurchschnitt (Fallback für Versicherer ohne vollständige Tabelle)
+// Basiert auf Verivox/Check24 Durchschnittswerten
+const AVG_HP = {50:24,49:20,48:20,47:19,46:19,45:19,44:18,43:18,42:17,41:17,40:16,39:16,38:16,37:15,36:15,35:14,34:14,33:13,32:13,31:13,30:12,29:12,28:11,27:11,26:10,25:10,24:9,23:9,22:8,21:8,20:7,19:7,18:6,17:6,16:5,15:5,14:4,13:4,12:3,11:3,10:2,9:2,8:1,7:1,6:0.5,5:0.5,4:0.5,3:0.5,2:0,1:0,0.5:0,0:'M'};
+const AVG_VK = {50:34,49:29,48:28,47:28,46:27,45:26,44:25,43:25,42:24,41:23,40:23,39:22,38:21,37:21,36:20,35:19,34:19,33:18,32:17,31:17,30:16,29:15,28:15,27:14,26:13,25:12,24:12,23:11,22:10,21:10,20:9,19:8,18:7,17:7,16:6,15:5,14:5,13:4,12:3,11:3,10:3,9:2,8:2,7:1,6:1,5:0.5,4:0.5,3:0.5,2:0,1:0,0.5:0,0:'M'};
+
+// SF-Klasse → Beitragssatz (% des Grundbeitrags) — GDV-Standardtabelle
+const SF_BEITRAGSSATZ = {
+  'M':220,'0':100,'0.5':100,'1':80,'2':70,'3':60,'4':55,'5':50,'6':45,
+  '7':42,'8':39,'9':36,'10':33,'11':31,'12':29,'13':28,'14':27,'15':26,
+  '16':25,'17':24,'18':23,'19':22,'20':22,'21':21,'22':21,'23':20,'24':20,
+  '25':20,'26':20,'27':19,'28':19,'29':18,'30':18,'31':17,'32':17,'33':17,
+  '34':16,'35':16,'36':15,'37':15,'38':15,'39':14,'40':14,'41':13,'42':13,
+  '43':13,'44':12,'45':12,'46':12,'47':11,'48':11,'49':11,'50':10,
+};
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let currentStep = 1;
+let photoBase64 = null;
+let aiSchadenBetrag = null;
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+function goStep(n) {
+  if (n === 2) {
+    // Betrag optional hier — kann auch manuell in Schritt 2 nachgetragen werden
+  }
+  if (n === 3) {
+    const w = parseFloat(document.getElementById('fahrzeugWert').value);
+    if (!w || w <= 0) { toast('Bitte Fahrzeugwert eingeben'); return; }
+    updateWertminderung();
+  }
+  currentStep = n;
+  ['step1','step2','step3'].forEach((s,i) => {
+    document.getElementById(s).style.display = i+1 === n ? 'block' : 'none';
+  });
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('p'+i);
+    const txt = document.getElementById('p'+i+'t');
+    if (i < n) { el.className='num done'; el.textContent='✓'; }
+    else if (i === n) { el.className='num active'; el.textContent=i; }
+    else { el.className='num inactive'; el.textContent=i; }
+    if (txt) txt.className = 'stxt' + (i === n ? ' active' : '');
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════
+//  FOTO & KI
+// ═══════════════════════════════════════════════
+function handlePhoto(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('previewImg').src = ev.target.result;
+    document.getElementById('imgPreview').style.display = 'block';
+    document.getElementById('aiSection').style.display = 'block';
+    document.getElementById('photoPrivacy').style.display = 'flex';
+    // Compress
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height, max = 1200;
+      if (w > max || h > max) { if (w > h) { h = Math.round(h*max/w); w = max; } else { w = Math.round(w*max/h); h = max; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      photoBase64 = canvas.toDataURL('image/jpeg', 0.82).split(',')[1];
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analysePhoto() {
+  if (!photoBase64) { toast('Bild wird noch geladen...'); return; }
+  const btn = document.getElementById('btnAnalyse');
+  const box = document.getElementById('aiBox');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Analysiere...';
+  box.style.display = 'block';
+  document.getElementById('aiText').textContent = 'KI analysiert den Schaden...';
+
+  try {
+    const key = getApiKey();
+    if (!key) { 
+      document.getElementById('aiText').textContent = 'Kein API Key gespeichert — bitte oben rechts 🔑 drücken und Key eingeben.';
+      btn.disabled = false; btn.textContent = '↺ Erneut analysieren'; return;
+    }
+    console.log('Key starts with:', key.substring(0,12), '... length:', key.length);
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'x-api-key': key
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photoBase64 }},
+            { type: 'text', text: `Du bist KFZ-Sachverständiger. Analysiere diesen Fahrzeugschaden und antworte NUR in diesem JSON-Format ohne weitere Erklärungen:
+{"beschreibung":"kurze Schadensbeschreibung (max 2 Sätze)","betrag_min":500,"betrag_max":900,"stufe":"klein|mittel|gross|total"}
+
+Werkstatttyp: ${WERKSTATT[currentWerkstatt].label} (Stundensatz ~€${WERKSTATT[currentWerkstatt].stundensatz}/h).
+Stufen: klein=Kratzer/Delle bis 5cm, mittel=größere Delle/Lackschaden, gross=Verformung/Austausch nötig, total=Totalschaden.
+Betrag = realistische Reparaturkosten für diesen Werkstatttyp inkl. Material und Arbeit in Euro.` }
+          ]
+        }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content?.map(c => c.text||'').join('') || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    const maxBetrag = parsed.betrag_max;  // Maximalwert — konservative Schätzung
+    aiSchadenBetrag = maxBetrag;
+    document.getElementById('schadenBetrag').value = maxBetrag;
+    document.getElementById('aiText').textContent =
+      `${parsed.beschreibung} — Geschätzte Kosten: €${parsed.betrag_min.toLocaleString('de')} – €${parsed.betrag_max.toLocaleString('de')} (Maximalwert übernommen)`;
+    box.style.display = 'block';
+    toast('KI-Analyse abgeschlossen ✓', true);
+  } catch(e) {
+    const msg = e?.message || String(e);
+    document.getElementById('aiText').textContent = 'Fehler: ' + msg + ' — bitte Betrag manuell eingeben.';
+    console.warn('API Error:', e);
+  }
+  btn.disabled = false;
+  btn.textContent = '↺ Erneut analysieren';
+}
+
+function syncManualInput() { aiSchadenBetrag = null; }
+
+// ═══════════════════════════════════════════════
+//  WERTMINDERUNG
+// ═══════════════════════════════════════════════
+function updateWertminderung() {
+  const w = parseFloat(document.getElementById('fahrzeugWert').value) || 0;
+  const s = parseFloat(document.getElementById('schadenBetrag').value) || 0;
+  const el = document.getElementById('wertminderungBox');
+  if (!w || !s) { el.textContent = 'Fahrzeugwert und Schaden eingeben.'; return; }
+  // Wertminderung: ca. 10-20% des Schadens bei nicht reparierten Schäden (Branchendaumen)
+  const wmPct = s / w > 0.1 ? 15 : (s / w > 0.05 ? 10 : 8);
+  const wm = Math.round(w * wmPct / 100);
+  el.innerHTML = `<span style="color:var(--amber)">Geschätzte Wertminderung: <strong>−€${wm.toLocaleString('de')}</strong></span><br>
+    <span style="font-size:11.5px;color:var(--grey)">(≈${wmPct}% des Fahrzeugwerts bei unrepariertem Schaden — relevant für Verkauf oder Rückgabe)</span>`;
+  return wm;
+}
+
+function updateRS() {
+  const ja = document.querySelector('input[name="rs"]:checked').value === 'ja';
+  document.getElementById('rsJa').classList.toggle('active', ja);
+  document.getElementById('rsNein').classList.toggle('active', !ja);
+}
+
+// ═══════════════════════════════════════════════
+//  SF-RECHNER KERN
+// ═══════════════════════════════════════════════
+function sfNachRueckstufung(versicherer, art, sfVon) {
+  const table = TABLES[versicherer];
+  const map = art === 'vollkasko'
+    ? (table.vk || AVG_VK)
+    : (table.hp || AVG_HP);
+  const key = sfVon === 0.5 ? 0.5 : (sfVon === 'M' ? 'M' : parseFloat(sfVon));
+  const result = map[key];
+  return result !== undefined ? result : Math.max(0, (parseFloat(sfVon) || 0) - 6);
+}
+
+function beitragssatz(sf) {
+  const key = sf === 'M' ? 'M' : (sf === 0.5 ? '0.5' : String(sf));
+  return (SF_BEITRAGSSATZ[key] || 50) / 100;
+}
+
+function berechne() {
+  const schaden      = parseFloat(document.getElementById('schadenBetrag').value) || 0;
+  const fahrzeugWert = parseFloat(document.getElementById('fahrzeugWert').value)  || 0;
+  const versicherer  = document.getElementById('versicherer').value;
+  const versArt      = document.getElementById('versArt').value;
+  const sfKlasse     = document.getElementById('sfKlasse').value;
+  const beitragInput = parseFloat(document.getElementById('beitrag').value) || 0;
+  const rhythmus     = parseInt(document.getElementById('rhythmus').value)  || 1;
+  const sb           = parseFloat(document.getElementById('selbstbeteiligung').value) || 0;
+  const rabattschutz = document.querySelector('input[name="rs"]:checked').value === 'ja';
+
+  if (!schaden)      { toast('Bitte Schadenbetrag eingeben'); return; }
+  if (!beitragInput) { toast('Bitte Versicherungsbeitrag eingeben'); return; }
+
+  // Jahresbeitrag
+  const jahresBeitrag = beitragInput * rhythmus;
+
+  // SF-Klassen
+  const sfVonNum = sfKlasse === 'M' ? 'M' : (sfKlasse === '0.5' ? 0.5 : parseInt(sfKlasse));
+  const sfNach   = rabattschutz ? sfVonNum : sfNachRueckstufung(versicherer, versArt, sfVonNum);
+
+  // Beitragssätze
+  const bsVor  = beitragssatz(sfVonNum);
+  const bsNach = beitragssatz(sfNach);
+
+  // Grundbeitrag & neuer Beitrag
+  const grundBeitrag       = jahresBeitrag / bsVor;
+  const neuerJahresBeitrag = grundBeitrag * bsNach;
+  const beitragsMehrJahr   = neuerJahresBeitrag - jahresBeitrag;
+
+  // Rückstufungsdauer
+  const sfVorNum2  = sfVonNum === 'M' ? -1 : (typeof sfVonNum === 'number' ? sfVonNum : 0);
+  const sfNachNum2 = sfNach   === 'M' ? -1 : (typeof sfNach   === 'number' ? sfNach   : parseFloat(sfNach) || 0);
+  const jahreZurueck    = Math.max(1, Math.ceil(sfVorNum2 - sfNachNum2));
+  const gesamtMehrkosten = beitragsMehrJahr * jahreZurueck;
+
+  // Wertminderung
+  const wmPct       = schaden / fahrzeugWert > 0.1 ? 15 : (schaden / fahrzeugWert > 0.05 ? 10 : 8);
+  const wertminderung = fahrzeugWert > 0 ? Math.round(fahrzeugWert * wmPct / 100) : 0;
+
+  // Labels
+  const versName    = TABLES[versicherer] ? TABLES[versicherer].name : 'Versicherung';
+  const wTyp        = WERKSTATT[currentWerkstatt] || WERKSTATT.frei;
+  const sfNachLabel = sfNach   === 'M' ? 'M' : (sfNach   === 0.5 ? '1/2' : sfNach);
+  const sfVorLabel  = sfVonNum === 'M' ? 'M' : (sfVonNum === 0.5 ? '1/2' : sfVonNum);
+
+  // Szenarien
+  const s1 = schaden;
+  const s2 = sb + gesamtMehrkosten;
+  const s3 = wertminderung;
+  const minKosten = Math.min(s1, s2, s3);
+  const empfehlung = minKosten === s1 ? 'self' : (minKosten === s2 ? 'versicherung' : 'nichts');
+
+  // Headline
+  const headlines = {
+    self: 'Selbst zahlen ist die günstigste Option.',
+    versicherung: 'Versicherung melden kann sich lohnen.',
+    nichts: 'Schaden hinnehmen hat den kleinsten Soforteffekt.'
+  };
+  document.getElementById('resultHeadline').textContent = headlines[empfehlung];
+
+  // Szenarien-Karten
+  const rabattHinweis = rabattschutz ? ' — Rabattschutz aktiv!' : '';
+  const wertHinweis   = fahrzeugWert > 0
+    ? 'Fahrzeugwert sinkt auf ' + String.fromCharCode(8364) + Math.round(fahrzeugWert - wertminderung).toLocaleString('de') + '.'
+    : 'Fahrzeugwert eingeben fuer genaue Angabe.';
+
+  const s1Class = s1 === minKosten ? 'green' : 'red';
+  const s2Class = s2 === minKosten ? 'green' : (s2 < s1 * 1.5 ? 'amber' : 'red');
+  const s3Class = s3 === minKosten ? 'green' : 'amber';
+
+  const sc1Winner = empfehlung === 'self' ? 'winner' : (s1 < s2 * 1.15 ? 'warning' : '');
+  const sc2Winner = empfehlung === 'versicherung' ? 'winner' : (s2 < s1 * 1.15 ? 'warning' : 'danger');
+  const sc3Winner = empfehlung === 'nichts' ? 'winner' : '';
+
+  const grid = document.getElementById('scenarioGrid');
+  grid.innerHTML = '';
+
+  function makeCard(winnerClass, icon, optLabel, title, costVal, costClass, detail) {
+    const div = document.createElement('div');
+    div.className = 'scenario ' + winnerClass;
+    if (winnerClass === 'winner') {
+      const badge = document.createElement('div');
+      badge.style.cssText = 'position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 10px;border-radius:100px';
+      badge.textContent = 'EMPFEHLUNG';
+      div.appendChild(badge);
+    }
+    div.innerHTML += '<div class="scenario-icon">' + icon + '</div>'
+      + '<div class="scenario-label">' + optLabel + '</div>'
+      + '<div class="scenario-title">' + title + '</div>'
+      + '<div class="scenario-cost ' + costClass + '">' + String.fromCharCode(8364) + costVal.toLocaleString('de') + '</div>'
+      + '<div class="scenario-detail">' + detail + '</div>';
+    grid.appendChild(div);
+  }
+
+  makeCard(sc1Winner, '🔧', 'Option 1', 'Selbst zahlen',
+    Math.round(s1), s1Class,
+    'Reparatur aus eigener Tasche. SF-Klasse bleibt bei ' + sfVorLabel + '. Kein Einfluss auf Beitrag.');
+
+  makeCard(sc2Winner, '📋', 'Option 2', 'Versicherung melden',
+    Math.round(s2), s2Class,
+    'SB ' + String.fromCharCode(8364) + sb + ' jetzt + ' + String.fromCharCode(8364) + Math.round(beitragsMehrJahr) + '/Jahr Mehrkosten. '
+    + 'Rueckstufung: SF ' + sfVorLabel + ' zu SF ' + sfNachLabel + '. '
+    + 'Rueckstufungsdauer: ~' + jahreZurueck + ' Jahre.' + rabattHinweis);
+
+  makeCard(sc3Winner, '🚗', 'Option 3', 'Nichts tun',
+    Math.round(s3), s3Class,
+    'Kein Geld jetzt, aber Wertverlust. Schaetzung: ' + wmPct + '% Wertminderung. ' + wertHinweis);
+
+  // Detailrechnung
+  const rows = [
+    ['Werkstatttyp', wTyp.label + ' (~' + String.fromCharCode(8364) + wTyp.stundensatz + '/h)', ''],
+    ['Schadenbetrag', String.fromCharCode(8364) + Math.round(schaden).toLocaleString('de'), ''],
+    ['Selbstbeteiligung', String.fromCharCode(8364) + sb.toLocaleString('de'), ''],
+    ['Aktueller Jahresbeitrag', String.fromCharCode(8364) + Math.round(jahresBeitrag).toLocaleString('de'), ''],
+    ['SF-Klasse vor Meldung', 'SF ' + sfVorLabel, ''],
+    ['SF-Klasse nach Rueckstufung', 'SF ' + sfNachLabel, 'red'],
+    ['Beitragsmehrkosten pro Jahr', '+' + String.fromCharCode(8364) + Math.round(beitragsMehrJahr).toLocaleString('de'), 'red'],
+    ['Hochstufungsdauer', '~' + jahreZurueck + ' Jahre', ''],
+    ['Gesamtmehrkosten Versicherung', String.fromCharCode(8364) + Math.round(gesamtMehrkosten).toLocaleString('de'), 'red'],
+    ['Wertminderung (unrepariert)', '-' + String.fromCharCode(8364) + Math.round(wertminderung).toLocaleString('de'), 'amber'],
+  ];
+
+  const empfehlungText = empfehlung === 'self' ? 'Selbst zahlen' : (empfehlung === 'versicherung' ? 'Versicherung melden' : 'Nichts tun');
+
+  let bdHtml = '<h3>Detailrechnung — ' + versName + '</h3>';
+  rows.forEach(function(r) {
+    bdHtml += '<div class="breakdown-row"><span class="key">' + r[0] + '</span><span class="val ' + r[2] + '">' + r[1] + '</span></div>';
+  });
+  bdHtml += '<div class="breakdown-row total"><span class="key">Guenstigste Option</span>'
+    + '<span class="val green">' + empfehlungText + ' (' + String.fromCharCode(8364) + Math.round(minKosten).toLocaleString('de') + ')</span></div>';
+  document.getElementById('breakdownBox').innerHTML = bdHtml;
+
+  // Views
+  document.getElementById('inputSection').style.display = 'none';
+  document.getElementById('result').style.display = 'block';
+  const p4 = document.getElementById('p4');
+  if (p4) { p4.className = 'num done'; p4.textContent = '✓'; }
+  const p4t = document.getElementById('p4t');
+  if (p4t) p4t.className = 'stxt active';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+
+function resetApp() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('inputSection').style.display = 'block';
+  photoBase64 = null; aiSchadenBetrag = null;
+  document.getElementById('schadenBetrag').value = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('aiSection').style.display = 'none';
+  document.getElementById('aiBox').style.display = 'none';
+  goStep(1);
+}
+
+function exportPDF() {
+  const content = document.getElementById('result').innerHTML;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+    <title>CrashGuide Auswertung</title>
+    <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;line-height:1.5}
+    h2{color:#ff4d00}table{width:100%;border-collapse:collapse}td{padding:8px;border-bottom:1px solid #eee}
+    .green{color:#00a055}.red{color:#cc2200}.amber{color:#d08000}
+    @media print{@page{margin:20mm}}</style></head>
+    <body><h2>CrashGuide · Schadenanalyse</h2>
+    <p style="color:#888;font-size:12px">Erstellt am ${new Date().toLocaleDateString('de-DE')} — Orientierungshilfe, kein Gutachten</p>
+    ${document.getElementById('scenarioGrid').outerHTML}
+    ${document.getElementById('breakdownBox').outerHTML}
+    <p style="font-size:11px;color:#aaa;margin-top:24px">Diese Berechnung ist eine Orientierungshilfe. Rückstufungstabellen basieren auf öffentlichen Angaben der Versicherer (Stand 2025/2026).</p>
+    <button onclick="window.print()" style="background:#ff4d00;color:#fff;border:none;padding:10px 20px;font-size:14px;cursor:pointer;border-radius:4px;margin-top:16px">Drucken / Als PDF speichern</button>
+    </div>
+</body></html>`);
+  win.document.close();
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+function toast(msg, success=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderLeftColor = success ? 'var(--green)' : 'var(--signal)';
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+
+function skipKey() {
+  document.getElementById('keyScreen').style.display='none';
+  document.getElementById('mainContent').style.display='block';
+}
+function submitApiKey() {
+  const val=document.getElementById('keyInput').value.trim();
+  const prefix='sk-ant-';
+  if(!val.startsWith(prefix)){document.getElementById('keyError').textContent='Key muss mit sk-ant- beginnen.';return;}
+  localStorage.setItem('cg_api_key',val);
+  document.getElementById('keyScreen').style.display='none';
+  document.getElementById('mainContent').style.display='block';
+}
+function changeApiKey() {
+  localStorage.removeItem('cg_api_key');
+  document.getElementById('keyInput').value='';
+  document.getElementById('keyError').textContent='';
+  document.getElementById('keyScreen').style.display='flex';
+  document.getElementById('mainContent').style.display='none';
+}
+function checkApiKey() {
+  if(!localStorage.getItem('cg_api_key')){
+    document.getElementById('keyScreen').style.display='flex';
+    document.getElementById('mainContent').style.display='none';
+  }
+}
+
+// Init pill state
+document.addEventListener('DOMContentLoaded', () => {
+  checkApiKey();
+  document.getElementById('rsNein').classList.add('active');
+  document.getElementById('fahrzeugWert').addEventListener('input', () => {
+    if (document.getElementById('schadenBetrag').value) updateWertminderung();
+  });
+});
+</script>
+</body>
+</html>
