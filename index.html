@@ -5,18 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>CrashGuide · Unfall? Richtig entscheiden.</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@700;800&display=swap');
-
 :root {
-  --black:#0a0a0a; --ink:#111; --surface:#161616; --card:#1c1c1c;
-  --border:#2a2a2a; --muted:#3a3a3a;
-  --white:#f5f5f0; --grey:#888; --grey-light:#bbb;
-  --signal:#ff4d00; --signal-dim:rgba(255,77,0,.12); --signal-glow:rgba(255,77,0,.25);
-  --green:#00c96e; --green-dim:rgba(0,201,110,.1);
-  --amber:#f0a500; --amber-dim:rgba(240,165,0,.1);
-  --blue:#3b82f6;
-  --font-display:'Syne',sans-serif;
-  --font-body:'Inter',sans-serif;
+  --black:#F7F5F0; --ink:#1C2733; --surface:#FBF9F5; --card:#FFFFFF;
+  --border:#E3DED3; --muted:#E8E3D9;
+  --white:#1C2733; --grey:#8A8378; --grey-light:#4A453E;
+  --primary:#1B3A5C; --primary-dim:rgba(27,58,92,.07); --primary-glow:rgba(27,58,92,.18);
+  --steel:#2D6E8E;
+  --signal:#B23A34; --signal-dim:rgba(178,58,52,.07); --signal-glow:rgba(178,58,52,.18);
+  --green:#1F7A4D; --green-dim:rgba(31,122,77,.08);
+  --amber:#B5790F; --amber-dim:rgba(181,121,15,.08);
+  --font-display:Georgia,'Times New Roman',serif;
+  --font-body:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
   --r:8px;
 }
 
@@ -24,23 +23,29 @@
 html{scroll-behavior:smooth}
 body{background:var(--black);color:var(--white);font-family:var(--font-body);font-size:15px;line-height:1.6;min-height:100vh;overflow-x:hidden}
 
+/* ── SIGNATURE BAR ── */
+.brand-bar{display:flex;height:4px;width:100%}
+.brand-bar span{flex:1}
+.brand-bar .b1{background:var(--green)}
+.brand-bar .b2{background:var(--amber)}
+.brand-bar .b3{background:var(--signal)}
+
 /* ── TYPOGRAPHY ── */
 h1,h2,h3{font-family:var(--font-display)}
-.display{font-size:clamp(2.2rem,6vw,3.8rem);font-weight:800;line-height:1.05;letter-spacing:-.02em}
-.display em{font-style:normal;color:var(--signal)}
-.label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);font-weight:500}
+.display{font-size:clamp(2.2rem,6vw,3.8rem);font-weight:700;line-height:1.08;letter-spacing:-.01em}
+.display em{font-style:italic;color:var(--primary)}
+.label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);font-weight:600}
 
 /* ── LAYOUT ── */
 .container{max-width:780px;margin:0 auto;padding:0 20px}
 section{padding:48px 0}
 
 /* ── HERO ── */
-#hero{padding:64px 0 48px;border-bottom:1px solid var(--border)}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--signal-dim);border:1px solid var(--signal-glow);border-radius:100px;padding:5px 14px;margin-bottom:28px}
-.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--signal);animation:blink 1.4s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.hero-eyebrow span{font-size:11.5px;color:var(--signal);letter-spacing:.06em;font-weight:500}
-.hero-sub{font-size:17px;color:var(--grey-light);margin-top:18px;max-width:520px;font-weight:300;line-height:1.6}
+#hero{padding:40px 0 48px;border-bottom:1px solid var(--border)}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--primary-dim);border:1px solid var(--primary-glow);border-radius:100px;padding:5px 14px;margin-bottom:28px}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.hero-eyebrow span{font-size:11.5px;color:var(--primary);letter-spacing:.06em;font-weight:600}
+.hero-sub{font-size:17px;color:var(--grey-light);margin-top:18px;max-width:520px;font-weight:400;line-height:1.6}
 .hero-badges{display:flex;gap:8px;margin-top:28px;flex-wrap:wrap}
 .badge{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:6px 14px;font-size:12.5px;color:var(--grey-light)}
 .badge svg{width:14px;height:14px;flex-shrink:0}
@@ -49,23 +54,23 @@ section{padding:48px 0}
 .progress-track{display:flex;align-items:center;gap:0;margin-bottom:40px}
 .progress-step{display:flex;align-items:center;gap:8px}
 .progress-step .num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;transition:all .3s}
-.progress-step .num.active{background:var(--signal);color:#fff}
-.progress-step .num.done{background:var(--green);color:#000}
+.progress-step .num.active{background:var(--primary);color:#fff}
+.progress-step .num.done{background:var(--green);color:#fff}
 .progress-step .num.inactive{background:var(--muted);color:var(--grey)}
 .progress-step .stxt{font-size:12px;color:var(--grey);white-space:nowrap}
 .progress-step .stxt.active{color:var(--white);font-weight:500}
 .progress-line{flex:1;height:1px;background:var(--border);margin:0 8px;min-width:16px}
 
 /* ── CARDS ── */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px}
-.card-title{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:.04em;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.card-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--signal);border-radius:2px;flex-shrink:0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:0 1px 2px rgba(28,39,51,.04)}
+.card-title{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:0;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--primary);border-radius:2px;flex-shrink:0}
 
 /* ── FORM ELEMENTS ── */
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .field label{font-size:12px;color:var(--grey-light);font-weight:500;letter-spacing:.04em}
 .field input,.field select{background:var(--surface);border:1px solid var(--border);color:var(--white);padding:10px 12px;border-radius:6px;font-family:var(--font-body);font-size:14px;width:100%;outline:none;transition:border-color .2s}
-.field input:focus,.field select:focus{border-color:var(--signal)}
+.field input:focus,.field select:focus{border-color:var(--primary)}
 .field input::placeholder{color:var(--grey)}
 .field select option{background:var(--surface)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -74,34 +79,34 @@ section{padding:48px 0}
 /* ── RADIO PILLS ── */
 .pill-group{display:flex;gap:8px;flex-wrap:wrap}
 .pill{background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:9px 16px;font-size:13px;color:var(--grey-light);cursor:pointer;transition:all .15s;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.pill:hover{border-color:var(--signal);color:var(--white)}
-.pill.active{background:var(--signal-dim);border-color:var(--signal);color:var(--white)}
+.pill:hover{border-color:var(--primary);color:var(--white)}
+.pill.active{background:var(--primary-dim);border-color:var(--primary);color:var(--primary)}
 .pill input{display:none}
 
 /* ── PHOTO UPLOAD ── */
 .upload-zone{border:1.5px dashed var(--border);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--surface)}
-.upload-zone:hover{border-color:var(--signal);background:var(--signal-dim)}
+.upload-zone:hover{border-color:var(--primary);background:var(--primary-dim)}
 .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-icon{font-size:28px;margin-bottom:8px;opacity:.5}
+.upload-icon{font-size:28px;margin-bottom:8px;opacity:.6}
 .upload-text{font-size:13px;color:var(--grey)}
 .upload-text strong{color:var(--grey-light)}
 .img-preview{margin-top:12px;display:none}
 .img-preview img{width:100%;border-radius:6px;display:block}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:6px;font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .18s;text-decoration:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.btn-primary{background:var(--signal);color:#fff}
-.btn-primary:hover{background:#e04400;transform:translateY(-1px)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:6px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .18s;text-decoration:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#14304D;transform:translateY(-1px)}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .btn-ghost{background:transparent;color:var(--grey-light);border:1px solid var(--border)}
 .btn-ghost:hover{border-color:var(--grey);color:var(--white)}
 .btn-full{width:100%}
-.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── AI RESULT ── */
-.ai-box{background:var(--signal-dim);border:1px solid var(--signal-glow);border-radius:var(--r);padding:14px 16px;font-size:13px;line-height:1.7;color:var(--grey-light);display:none}
-.ai-box strong{color:var(--signal);font-size:10px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px}
+.ai-box{background:var(--primary-dim);border:1px solid var(--primary-glow);border-radius:var(--r);padding:14px 16px;font-size:13px;line-height:1.7;color:var(--grey-light);display:none}
+.ai-box strong{color:var(--primary);font-size:10px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px}
 
 /* ── RESULT SCREEN ── */
 #result{display:none}
@@ -112,9 +117,9 @@ section{padding:48px 0}
 .scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:28px 0}
 @media(max-width:600px){.scenario-grid{grid-template-columns:1fr}}
 
-.scenario{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:18px 16px;text-align:center;transition:all .2s;position:relative}
+.scenario{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:18px 16px;text-align:center;transition:all .2s;position:relative;box-shadow:0 1px 2px rgba(28,39,51,.04)}
 .scenario.winner{border-color:var(--green);background:var(--green-dim)}
-.scenario.winner::before{content:'EMPFEHLUNG';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 10px;border-radius:100px}
+.scenario.winner::before{content:'EMPFEHLUNG';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 10px;border-radius:100px}
 .scenario.warning{border-color:var(--amber)}
 .scenario.danger{border-color:var(--signal)}
 .scenario-icon{font-size:22px;margin-bottom:8px}
@@ -143,7 +148,7 @@ section{padding:48px 0}
 .action-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);border-left:3px solid var(--signal);color:var(--white);padding:12px 20px;border-radius:6px;font-size:13px;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);border-left:3px solid var(--signal);color:var(--white);padding:12px 20px;border-radius:6px;font-size:13px;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none;box-shadow:0 4px 16px rgba(28,39,51,.12)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
 /* ── SCROLLBAR ── */
@@ -179,6 +184,8 @@ section{padding:48px 0}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+
+<div class="brand-bar"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
 
 <!-- HERO -->
 <div id="mainContent">
@@ -460,8 +467,8 @@ section{padding:48px 0}
 
     <div class="breakdown" id="breakdownBox"></div>
 
-    <div style="background:rgba(255,77,0,.08);border:1px solid rgba(255,77,0,.2);border-radius:8px;padding:14px 16px;margin-top:16px">
-      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--signal);font-weight:600;margin-bottom:6px">⚠ Wichtiger Hinweis</div>
+    <div style="background:var(--amber-dim);border:1px solid rgba(181,121,15,.25);border-radius:8px;padding:14px 16px;margin-top:16px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:6px">⚠ Wichtiger Hinweis</div>
       <div style="font-size:12.5px;color:var(--grey-light);line-height:1.7">
         Diese Berechnung ist eine <strong style="color:var(--white)">unverbindliche Orientierungshilfe</strong> — kein Kostenvoranschlag, kein Gutachten und keine Versicherungsberatung. Tatsächliche Reparaturkosten können je nach Schadensumfang und Werkstatt abweichen. Rückstufungstabellen basieren auf öffentlichen Angaben der Versicherer (Stand 2025/2026) und können tarifabhängig variieren.<br><br>
         🔒 <strong style="color:var(--white)">Datenschutz:</strong> Hochgeladene Fotos werden ausschließlich für die KI-Analyse verwendet und nicht gespeichert oder weitergegeben.
@@ -948,14 +955,15 @@ function exportPDF() {
   let y = 20;
 
   // Farben (optimiert für weißes PDF)
-  const COL_SIGNAL  = [220,  60,   0];
-  const COL_GREEN   = [0,   150,  80];
-  const COL_RED     = [180,  40,  20];
-  const COL_AMBER   = [180, 110,   0];
-  const COL_BLACK   = [20,   20,  20];
+  const COL_SIGNAL  = [178,  58,  52];
+  const COL_GREEN   = [31,  122,  77];
+  const COL_RED     = [178,  58,  52];
+  const COL_AMBER   = [181, 121,  15];
+  const COL_PRIMARY = [27,   58,  92];
+  const COL_BLACK   = [28,   39,  51];
   const COL_GREY    = [100, 100, 100];
   const COL_LIGHT   = [30,   30,  30];
-  const COL_BORDER  = [200, 200, 200];
+  const COL_BORDER  = [225, 220, 211];
 
   function setColor(rgb) { doc.setTextColor(rgb[0], rgb[1], rgb[2]); }
   function line(x1,y1,x2,y2,rgb) {
@@ -964,17 +972,21 @@ function exportPDF() {
   }
 
   // ── HEADER ──
-  doc.setFillColor(15,15,15);
+  doc.setFillColor(COL_PRIMARY[0], COL_PRIMARY[1], COL_PRIMARY[2]);
   doc.rect(0, 0, W, 36, 'F');
+  doc.setFillColor(COL_GREEN[0], COL_GREEN[1], COL_GREEN[2]);
+  doc.rect(0, 33, W/3, 3, 'F');
+  doc.setFillColor(COL_AMBER[0], COL_AMBER[1], COL_AMBER[2]);
+  doc.rect(W/3, 33, W/3, 3, 'F');
   doc.setFillColor(COL_SIGNAL[0], COL_SIGNAL[1], COL_SIGNAL[2]);
-  doc.rect(0, 33, W, 3, 'F');
+  doc.rect(2*W/3, 33, W/3, 3, 'F');
   doc.setFont('helvetica','bold');
   doc.setFontSize(22);
-  setColor([245,245,240]);
+  setColor([250,249,246]);
   doc.text('CrashGuide', margin, 16);
   doc.setFontSize(9);
   doc.setFont('helvetica','normal');
-  setColor([120,120,120]);
+  setColor([180,195,210]);
   doc.text('Schadenanalyse & Entscheidungshilfe', margin, 24);
   doc.text('Erstellt am ' + new Date().toLocaleDateString('de-DE'), W - margin, 24, {align:'right'});
   y = 46;
@@ -983,7 +995,7 @@ function exportPDF() {
   const headline = document.getElementById('resultHeadline').textContent;
   doc.setFont('helvetica','bold');
   doc.setFontSize(14);
-  setColor(COL_SIGNAL);
+  setColor(COL_PRIMARY);
   doc.text(headline, margin, y);
   y += 10;
 
@@ -1017,7 +1029,7 @@ function exportPDF() {
       doc.setFillColor(COL_GREEN[0],COL_GREEN[1],COL_GREEN[2]);
       doc.roundedRect(x + cardW/2 - 14, y - 3.5, 28, 6, 1, 1, 'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(5.5);
-      setColor([0,0,0]);
+      setColor([255,255,255]);
       doc.text('EMPFEHLUNG', x + cardW/2, y - 0.5, {align:'center'});
     }
 
@@ -1093,16 +1105,16 @@ function exportPDF() {
   y += 8;
 
   // ── DISCLAIMER ──
-  doc.setFillColor(40,20,10);
+  doc.setFillColor(251,243,224);
   doc.rect(margin - 2, y - 3, contentW + 4, 20, 'F');
-  doc.setDrawColor(COL_SIGNAL[0],COL_SIGNAL[1],COL_SIGNAL[2]);
+  doc.setDrawColor(COL_AMBER[0],COL_AMBER[1],COL_AMBER[2]);
   doc.setLineWidth(0.4);
   doc.line(margin - 2, y - 3, margin - 2, y + 17);
   doc.setFont('helvetica','bold'); doc.setFontSize(7);
-  setColor(COL_SIGNAL);
+  setColor(COL_AMBER);
   doc.text('WICHTIGER HINWEIS', margin + 2, y + 1);
   doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
-  setColor([80,60,50]);
+  setColor([122,85,0]);
   const disclaimer = 'Diese Berechnung ist eine unverbindliche Orientierungshilfe - kein Kostenvoranschlag und keine Versicherungsberatung. Tatsaechliche Reparaturkosten koennen abweichen. Rueckstufungstabellen basieren auf oeffentlichen Angaben der Versicherer (Stand 2025/2026).';
   const dlLines = doc.splitTextToSize(disclaimer, contentW - 4);
   doc.text(dlLines, margin + 2, y + 7);
