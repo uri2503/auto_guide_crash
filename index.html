@@ -181,20 +181,14 @@ section{padding:48px 0}
 <body>
 
 <!-- HERO -->
-<div id="keyScreen" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9999;align-items:center;justify-content:center;padding:20px"><div style="background:#1c1c1c;border:1px solid #2a2a2a;border-top:3px solid #ff4d00;border-radius:10px;padding:32px 28px;max-width:420px;width:100%"><div style="font-family:Syne,sans-serif;font-size:24px;font-weight:800;color:#f5f5f0;margin-bottom:4px">CrashGuide</div><div style="font-size:11px;color:#888;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px">KI-Analyse Einrichtung</div><p style="font-size:13.5px;color:#bbb;line-height:1.7;margin-bottom:22px">Fuer die KI-Schadensanalyse wird ein Anthropic API Key benoetigt. Der Key wird ausschliesslich in deinem Browser gespeichert.</p><div style="margin-bottom:16px"><label style="font-size:11px;color:#888;display:block;margin-bottom:6px">ANTHROPIC API KEY</label><input id="keyInput" type="password" placeholder="sk-ant-..." style="width:100%;background:#111;border:1px solid #2a2a2a;color:#f5f5f0;padding:11px 12px;border-radius:6px;font-size:13px;font-family:monospace;outline:none" onkeydown="if(event.key==='Enter')submitApiKey()"><div id="keyError" style="font-size:11.5px;color:#ff4d00;margin-top:6px;min-height:16px"></div></div><button onclick="submitApiKey()" style="width:100%;background:#ff4d00;color:#fff;border:none;padding:12px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Key speichern und starten</button><div style="margin-top:16px;padding-top:16px;border-top:1px solid #2a2a2a"><button onclick="skipKey()" style="background:none;border:none;color:#555;font-size:12px;cursor:pointer;text-decoration:underline;padding:0">Ohne KI-Analyse fortfahren</button></div></div></div>
 <div id="mainContent">
 <section id="hero">
   <div class="container">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <div style="margin-bottom:20px">
       <div class="hero-eyebrow" style="margin-bottom:0">
       <div class="hero-dot"></div>
       <span>Kostenlose Erstanalyse</span>
     </div>
-      <button onclick="changeApiKey()" 
-        style="background:var(--card);border:1px solid var(--border);color:var(--grey-light);padding:7px 14px;border-radius:6px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-body)"
-        title="API Key ändern">
-        🔑 <span style="font-size:11px">API Key</span>
-      </button>
     </div>
     <h1 class="display">Unfall.<br><em>Was kostet mich das wirklich?</em></h1>
     <p class="hero-sub">Foto hochladen, Versicherungsdaten eingeben — und in 60 Sekunden weißt du ob sich die Meldung an deine Versicherung lohnt.</p>
@@ -475,9 +469,10 @@ section{padding:48px 0}
     </div>
 
     <div class="action-row">
-      <button class="btn btn-ghost" onclick="resetApp()" style="flex:1">← Neue Berechnung</button><button class="btn btn-ghost" onclick="changeApiKey()" style="padding:12px 16px" title="API Key ändern">🔑</button>
-      <button class="btn btn-primary" onclick="exportPDF()" style="flex:1">⬇ Als PDF speichern</button>
+      <button class="btn btn-ghost" onclick="resetApp()" style="flex:1">← Neue Berechnung</button>
+      <button class="btn btn-primary" onclick="requestExport()" style="flex:1">⬇ Als PDF speichern · €1,49</button>
     </div>
+    <div style="text-align:center;font-size:11.5px;color:var(--grey);margin-top:10px">Jeder PDF-Export kostet €1,49 — einmalige Zahlung, kein Abo</div>
 
   </div>
 </section>
@@ -485,6 +480,21 @@ section{padding:48px 0}
 <div class="toast" id="toast"></div>
 
 <script>
+// ═══════════════════════════════════════════════
+//  KONFIGURATION — KI-Proxy (Supabase Edge Function)
+// ═══════════════════════════════════════════════
+const SUPA_ANON_KEY = 'sb_publishable_v4kXJa0y-2EHsCFPqBFHfg_QvzKLnt2';
+
+// ═══════════════════════════════════════════════
+//  KONFIGURATION — FREEMIUM / BEZAHLMODELL
+// ═══════════════════════════════════════════════
+// ⚠️ TODO VOR GO-LIVE: Platzhalter durch echten Stripe-Payment-Link ersetzen (€1,49, Sandbox zum Testen)
+// WICHTIG: In Stripe muss unter "After payment" die Redirect-URL auf
+// genau diese Seite + "?paid=1" gesetzt werden, z.B.:
+// https://uri2503.github.io/auto_guide_crash/?paid=1
+const STRIPE_PDF_LINK = 'https://buy.stripe.com/test_PLATZHALTER';
+const MAX_FREE_ANALYSEN = 2;
+
 // ═══════════════════════════════════════════════
 //  WERKSTATTTYP
 // ═══════════════════════════════════════════════
@@ -507,12 +517,6 @@ function setWerkstatt(el) {
   const info = document.getElementById('werkstattInfo');
   if (info) info.innerHTML = `Ø Stundensatz: <strong style="color:var(--grey-light)">~€${w.stundensatz}/h</strong> — beeinflusst die KI-Schätzung`;
 }
-
-// ═══════════════════════════════════════════════
-//  API KEY
-// ═══════════════════════════════════════════════
-function getApiKey() { return localStorage.getItem('cg_api_key') || ''; }
-function saveApiKey(k) { localStorage.setItem('cg_api_key', k.trim()); }
 
 // ═══════════════════════════════════════════════
 //  RÜCKSTUFUNGSTABELLEN  (1 Schaden, Haftpflicht + Vollkasko)
@@ -623,32 +627,38 @@ function handlePhoto(e) {
   reader.readAsDataURL(file);
 }
 
+function getAnalyseCount() { return parseInt(localStorage.getItem('cg_analyse_count') || '0', 10); }
+function incAnalyseCount() { localStorage.setItem('cg_analyse_count', String(getAnalyseCount() + 1)); }
+
 async function analysePhoto() {
   if (!photoBase64) { toast('Bild wird noch geladen...'); return; }
   const btn = document.getElementById('btnAnalyse');
   const box = document.getElementById('aiBox');
+
+  if (getAnalyseCount() >= MAX_FREE_ANALYSEN) {
+    box.style.display = 'block';
+    document.getElementById('aiText').textContent = 'Kostenlose KI-Analysen aufgebraucht (' + MAX_FREE_ANALYSEN + 'x). Bitte den Schadensbetrag manuell eingeben und unten weiter zu Schritt 2 — der PDF-Bericht mit allen Details bleibt natürlich verfügbar.';
+    btn.disabled = true;
+    btn.textContent = 'Kostenlose Analysen aufgebraucht';
+    return;
+  }
+
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Analysiere...';
   box.style.display = 'block';
   document.getElementById('aiText').textContent = 'KI analysiert den Schaden...';
+  incAnalyseCount();
 
   try {
-    const key = getApiKey();
-    if (!key) { 
-      document.getElementById('aiText').textContent = 'Kein API Key gespeichert — bitte oben rechts 🔑 drücken und Key eingeben.';
-      btn.disabled = false; btn.textContent = '↺ Erneut analysieren'; return;
-    }
-    console.log('Key starts with:', key.substring(0,12), '... length:', key.length);
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://ysqzdqazcgyuzdorauiq.supabase.co/functions/v1/claude-proxy', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-        'x-api-key': key
+        'apikey': SUPA_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPA_ANON_KEY
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 400,
         messages: [{
           role: 'user',
@@ -665,7 +675,7 @@ Betrag = realistische Reparaturkosten für diesen Werkstatttyp inkl. Material un
       })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
+    if (data.error) throw new Error(data.error.message || data.error);
     const text = data.content?.map(c => c.text||'').join('') || '';
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
@@ -682,8 +692,13 @@ Betrag = realistische Reparaturkosten für diesen Werkstatttyp inkl. Material un
     document.getElementById('aiText').textContent = 'Fehler: ' + msg + ' — bitte Betrag manuell eingeben.';
     console.warn('API Error:', e);
   }
-  btn.disabled = false;
-  btn.textContent = '↺ Erneut analysieren';
+  if (getAnalyseCount() >= MAX_FREE_ANALYSEN) {
+    btn.disabled = true;
+    btn.textContent = 'Kostenlose Analysen aufgebraucht';
+  } else {
+    btn.disabled = false;
+    btn.textContent = '↺ Erneut analysieren (' + (MAX_FREE_ANALYSEN - getAnalyseCount()) + 'x übrig)';
+  }
 }
 
 function syncManualInput() { aiSchadenBetrag = null; }
@@ -883,6 +898,47 @@ function resetApp() {
   goStep(1);
 }
 
+// ═══════════════════════════════════════════════
+//  PDF-EXPORT BEZAHLSCHRANKE
+// ═══════════════════════════════════════════════
+// Da CrashGuide ohne Login/Backend läuft, wird das Ergebnis vor der
+// Weiterleitung zu Stripe als Snapshot in localStorage gesichert und nach
+// erfolgreicher Zahlung (Rückkehr mit ?paid=1) automatisch wiederhergestellt.
+function requestExport() {
+  const resultEl = document.getElementById('result');
+  const snapshot = { html: resultEl.innerHTML, ts: Date.now() };
+  localStorage.setItem('cg_pending_pdf', JSON.stringify(snapshot));
+  window.location.href = STRIPE_PDF_LINK;
+}
+
+function tryRestorePaidExport() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('paid') !== '1') return;
+
+  const raw = localStorage.getItem('cg_pending_pdf');
+  if (!raw) { toast('Zahlung erkannt, aber kein gespeicherter Bericht gefunden — bitte Berechnung erneut durchführen.'); cleanPaidUrl(); return; }
+
+  try {
+    const snapshot = JSON.parse(raw);
+    document.getElementById('result').innerHTML = snapshot.html;
+    document.getElementById('inputSection').style.display = 'none';
+    document.getElementById('result').style.display = 'block';
+    localStorage.removeItem('cg_pending_pdf'); // Einmal-Nutzung — verhindert erneuten Export ohne neue Zahlung
+    toast('Zahlung erfolgreich — PDF wird erstellt ✓', true);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    setTimeout(exportPDF, 400); // kurze Pause, damit DOM sicher gerendert ist
+  } catch(e) {
+    toast('Fehler beim Wiederherstellen des Berichts.');
+  }
+  cleanPaidUrl();
+}
+
+function cleanPaidUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('paid');
+  window.history.replaceState({}, '', url.toString());
+}
+
 function exportPDF() {
   const { jsPDF } = window.jspdf;
   if (!jsPDF) { toast('PDF-Bibliothek nicht geladen — bitte kurz warten'); return; }
@@ -1079,39 +1135,13 @@ function toast(msg, success=false) {
 }
 
 
-function skipKey() {
-  document.getElementById('keyScreen').style.display='none';
-  document.getElementById('mainContent').style.display='block';
-}
-function submitApiKey() {
-  const val=document.getElementById('keyInput').value.trim();
-  const prefix='sk-ant-';
-  if(!val.startsWith(prefix)){document.getElementById('keyError').textContent='Key muss mit sk-ant- beginnen.';return;}
-  localStorage.setItem('cg_api_key',val);
-  document.getElementById('keyScreen').style.display='none';
-  document.getElementById('mainContent').style.display='block';
-}
-function changeApiKey() {
-  localStorage.removeItem('cg_api_key');
-  document.getElementById('keyInput').value='';
-  document.getElementById('keyError').textContent='';
-  document.getElementById('keyScreen').style.display='flex';
-  document.getElementById('mainContent').style.display='none';
-}
-function checkApiKey() {
-  if(!localStorage.getItem('cg_api_key')){
-    document.getElementById('keyScreen').style.display='flex';
-    document.getElementById('mainContent').style.display='none';
-  }
-}
-
 // Init pill state
 document.addEventListener('DOMContentLoaded', () => {
-  checkApiKey();
   document.getElementById('rsNein').classList.add('active');
   document.getElementById('fahrzeugWert').addEventListener('input', () => {
     if (document.getElementById('schadenBetrag').value) updateWertminderung();
   });
+  tryRestorePaidExport();
 });
 </script>
 </body>
