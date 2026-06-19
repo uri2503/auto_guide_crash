@@ -71,12 +71,24 @@ section{padding:48px 0}
 
 /* ── CARDS ── */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:0 1px 2px rgba(28,39,51,.04)}
-.card-title{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:0;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:0;color:var(--white);margin-bottom:4px;display:flex;align-items:center;gap:8px}
 .card-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--primary);border-radius:2px;flex-shrink:0}
+.card-hint{font-size:12.5px;color:var(--grey);margin-bottom:18px;padding-left:11px}
+
+/* ── INFO-TOOLTIPS ── */
+.info-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--primary-dim);color:var(--primary);font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;user-select:none}
+.info-text{display:none;background:var(--primary-dim);border-left:2px solid var(--primary);border-radius:0 4px 4px 0;padding:8px 10px;font-size:11.5px;color:var(--grey-light);line-height:1.5;margin:6px 0 2px}
+.info-text.show{display:block}
+
+/* ── HERO HOW-IT-WORKS ── */
+.how-toggle{display:inline-flex;align-items:center;gap:5px;background:none;border:none;color:#9FC3DE;font-size:12px;font-family:var(--font-body);cursor:pointer;padding:0;margin-top:14px;text-decoration:underline;text-underline-offset:3px;-webkit-tap-highlight-color:transparent}
+.how-panel{display:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:14px 16px;margin-top:14px;max-width:520px}
+.how-panel.show{display:block}
+.how-panel ol{margin:0;padding-left:18px;color:#CBDCE9;font-size:12.5px;line-height:1.9}
 
 /* ── FORM ELEMENTS ── */
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.field label{font-size:12px;color:var(--grey-light);font-weight:500;letter-spacing:.04em}
+.field label{font-size:12px;color:var(--grey-light);font-weight:500;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
 .field input,.field select{background:var(--surface);border:1px solid var(--border);color:var(--white);padding:10px 12px;border-radius:6px;font-family:var(--font-body);font-size:14px;width:100%;outline:none;transition:border-color .2s}
 .field input:focus,.field select:focus{border-color:var(--primary)}
 .field input::placeholder{color:var(--grey)}
@@ -221,6 +233,16 @@ section{padding:48px 0}
         Erste Analyse gratis
       </div>
     </div>
+
+    <button class="how-toggle" id="howBtn" onclick="toggleHow()">? Wie funktioniert CrashGuide?</button>
+    <div class="how-panel" id="howPanel">
+      <ol>
+        <li>Foto vom Schaden machen und hochladen (oder Betrag direkt selbst eintragen)</li>
+        <li>Ein paar Fahrzeug- und Versicherungsdaten ergänzen — dauert eine Minute</li>
+        <li>Ergebnis ansehen: Selbstzahlung oder Versicherung — mit echten Zahlen verglichen</li>
+        <li>Optional: Bericht als PDF für Werkstatt oder Versicherung sichern (€1,49)</li>
+      </ol>
+    </div>
   </div>
 </section>
 
@@ -255,6 +277,7 @@ section{padding:48px 0}
     <div id="step1">
       <div class="card">
         <div class="card-title">Schadensfoto & Erstschätzung</div>
+        <div class="card-hint">Foto hochladen, KI schätzt den Schaden — oder direkt manuell eintragen, falls kein Foto da ist.</div>
 
         <div class="upload-zone" id="uploadZone">
           <input type="file" accept="image/*" onchange="handlePhoto(event)">
@@ -319,6 +342,7 @@ section{padding:48px 0}
     <div id="step2" style="display:none">
       <div class="card">
         <div class="card-title">Fahrzeugdaten</div>
+        <div class="card-hint">Hilft uns, die Wertminderung durch den Schaden realistisch einzuschätzen.</div>
         <div class="field" id="schadenFeld2" style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)">
           <label>Schadenbetrag (€) — falls noch nicht eingegeben</label>
           <input type="number" id="schadenBetrag2" placeholder="z.B. 800" min="0"
@@ -355,6 +379,7 @@ section{padding:48px 0}
     <div id="step3" style="display:none">
       <div class="card">
         <div class="card-title">Versicherungsdaten</div>
+        <div class="card-hint">Findest du auf deiner Kfz-Versicherungspolice oder dem letzten Beitragsbescheid.</div>
 
         <div class="field">
           <label>Versicherer</label>
@@ -380,7 +405,8 @@ section{padding:48px 0}
             </select>
           </div>
           <div class="field">
-            <label>Aktuelle SF-Klasse</label>
+            <label>Aktuelle SF-Klasse <span class="info-icon" onclick="toggleInfo('info-sf')">ⓘ</span></label>
+            <div class="info-text" id="info-sf">Steht auf deiner Kfz-Versicherungspolice oder dem letzten Beitragsbescheid, meist als „SF" oder „SFK" mit einer Zahl. Nicht zur Hand? Wähle eine ungefähre Schätzung — du kannst sie später korrigieren.</div>
             <select id="sfKlasse">
               <option value="M">M (Malus)</option>
               <option value="0">SF 0</option>
@@ -440,12 +466,14 @@ section{padding:48px 0}
         </div>
 
         <div class="field">
-          <label>Selbstbeteiligung (€)</label>
+          <label>Selbstbeteiligung (€) <span class="info-icon" onclick="toggleInfo('info-sb')">ⓘ</span></label>
+          <div class="info-text" id="info-sb">Der Betrag, den du bei einem Versicherungsschaden immer selbst zahlst — steht ebenfalls auf der Police. 300€ ist ein üblicher Standardwert, falls du unsicher bist.</div>
           <input type="number" id="selbstbeteiligung" placeholder="z.B. 300" min="0" value="300">
         </div>
 
         <div class="field" id="rabattschutzField">
-          <label>Rabattschutz vorhanden?</label>
+          <label>Rabattschutz vorhanden? <span class="info-icon" onclick="toggleInfo('info-rs')">ⓘ</span></label>
+          <div class="info-text" id="info-rs">Ein optionaler Baustein mancher Versicherungen: Der erste Schaden im Jahr führt dann nicht zur Rückstufung deiner SF-Klasse. Steht auf der Police, falls vorhanden — im Zweifel "Nein" wählen.</div>
           <div class="pill-group">
             <label class="pill" id="rsNein"><input type="radio" name="rs" value="nein" checked onchange="updateRS()">Nein</label>
             <label class="pill" id="rsJa"><input type="radio" name="rs" value="ja" onchange="updateRS()">Ja — 1 Schaden pro Jahr frei</label>
@@ -485,12 +513,22 @@ section{padding:48px 0}
 
     <div class="action-row">
       <button class="btn btn-ghost" onclick="resetApp()" style="flex:1">← Neue Berechnung</button>
-      <button class="btn btn-primary" onclick="requestExport()" style="flex:1">⬇ Als PDF speichern · €1,49</button>
+      <button class="btn btn-primary" id="exportBtn" style="flex:1;opacity:.45;pointer-events:none" onclick="return window.cgConsentOk===true && requestExport()">⬇ Als PDF speichern · €1,49</button>
+    </div>
+    <div class="consent-box" style="text-align:left;display:flex;gap:10px;align-items:flex-start;margin-top:14px">
+      <input type="checkbox" id="cgWiderrufCheck" onchange="cgToggleExport()" style="margin-top:3px;flex-shrink:0;width:18px;height:18px">
+      <label for="cgWiderrufCheck" style="font-size:11.5px;color:var(--grey);line-height:1.5;text-align:left">Ich stimme ausdrücklich zu, dass mit der Bereitstellung des PDF-Berichts vor Ablauf der Widerrufsfrist begonnen wird, und bestätige, dass ich dadurch mein Widerrufsrecht verliere (§&nbsp;356 Abs.&nbsp;5 BGB).</label>
     </div>
     <div style="text-align:center;font-size:11.5px;color:var(--grey);margin-top:10px">Jeder PDF-Export kostet €1,49 — einmalige Zahlung, kein Abo</div>
 
   </div>
 </section>
+
+</div>
+
+<footer style="background:#0F2840;padding:24px 20px;text-align:center;margin-top:8px">
+  <p style="font-size:12px;color:#5C84A8">CrashGuide &nbsp;·&nbsp; <a href="rechtliches.html" style="color:#5C84A8;text-decoration:none">Impressum</a> &nbsp;·&nbsp; <a href="rechtliches.html#datenschutz" style="color:#5C84A8;text-decoration:none">Datenschutz</a> &nbsp;·&nbsp; <a href="rechtliches.html#agb" style="color:#5C84A8;text-decoration:none">AGB</a></p>
+</footer>
 
 <div class="toast" id="toast"></div>
 
@@ -910,6 +948,8 @@ function resetApp() {
   document.getElementById('imgPreview').style.display = 'none';
   document.getElementById('aiSection').style.display = 'none';
   document.getElementById('aiBox').style.display = 'none';
+  const widerrufBox = document.getElementById('cgWiderrufCheck');
+  if (widerrufBox) { widerrufBox.checked = false; cgToggleExport(); }
   goStep(1);
 }
 
@@ -919,6 +959,16 @@ function resetApp() {
 // Da CrashGuide ohne Login/Backend läuft, wird das Ergebnis vor der
 // Weiterleitung zu Stripe als Snapshot in localStorage gesichert und nach
 // erfolgreicher Zahlung (Rückkehr mit ?paid=1) automatisch wiederhergestellt.
+window.cgConsentOk = false;
+function cgToggleExport() {
+  const box = document.getElementById('cgWiderrufCheck');
+  const btn = document.getElementById('exportBtn');
+  if (!box || !btn) return;
+  window.cgConsentOk = box.checked;
+  btn.style.opacity = box.checked ? '1' : '.45';
+  btn.style.pointerEvents = box.checked ? 'auto' : 'none';
+}
+
 function requestExport() {
   const resultEl = document.getElementById('result');
   const snapshot = { html: resultEl.innerHTML, ts: Date.now() };
@@ -1145,6 +1195,18 @@ function exportPDF() {
 // ═══════════════════════════════════════════════
 //  TOAST
 // ═══════════════════════════════════════════════
+function toggleInfo(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+function toggleHow() {
+  const panel = document.getElementById('howPanel');
+  const btn = document.getElementById('howBtn');
+  if (!panel) return;
+  const open = panel.classList.toggle('show');
+  if (btn) btn.textContent = open ? '– Weniger anzeigen' : '? Wie funktioniert CrashGuide?';
+}
+
 function toast(msg, success=false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
