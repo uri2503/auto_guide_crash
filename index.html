@@ -30,6 +30,16 @@ body{background:var(--black);color:var(--white);font-family:var(--font-body);fon
 .brand-bar .b2{background:var(--amber)}
 .brand-bar .b3{background:var(--signal)}
 
+/* ── HERO (bewusster dunkler Kontrast-Moment) ── */
+#hero{padding:56px 0 48px;background:linear-gradient(165deg,#0F2840 0%,#1B3A5C 65%,#16314F 100%);margin-bottom:0}
+#hero .hero-eyebrow{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+#hero .hero-eyebrow span{color:#9FC3DE}
+#hero .hero-dot{background:#9FC3DE}
+#hero .display{color:#F7F5F0}
+#hero .display em{color:#9FC3DE}
+#hero .hero-sub{color:#B7CBDC}
+#hero .badge{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#CBDCE9}
+
 /* ── TYPOGRAPHY ── */
 h1,h2,h3{font-family:var(--font-display)}
 .display{font-size:clamp(2.2rem,6vw,3.8rem);font-weight:700;line-height:1.08;letter-spacing:-.01em}
@@ -40,9 +50,7 @@ h1,h2,h3{font-family:var(--font-display)}
 .container{max-width:780px;margin:0 auto;padding:0 20px}
 section{padding:48px 0}
 
-/* ── HERO ── */
-#hero{padding:40px 0 48px;border-bottom:1px solid var(--border)}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--primary-dim);border:1px solid var(--primary-glow);border-radius:100px;padding:5px 14px;margin-bottom:28px}
+/* ── HERO BASISKLASSEN (auch für evtl. weitere helle Nutzung) ── */
 .hero-dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
 .hero-eyebrow span{font-size:11.5px;color:var(--primary);letter-spacing:.06em;font-weight:600}
 .hero-sub{font-size:17px;color:var(--grey-light);margin-top:18px;max-width:520px;font-weight:400;line-height:1.6}
