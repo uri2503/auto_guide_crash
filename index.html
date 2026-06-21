@@ -110,8 +110,10 @@ section{padding:48px 0}
 .upload-icon{font-size:28px;margin-bottom:8px;opacity:.6}
 .upload-text{font-size:13px;color:var(--grey)}
 .upload-text strong{color:var(--grey-light)}
-.img-preview{margin-top:12px;display:none}
-.img-preview img{width:100%;border-radius:6px;display:block}
+.img-preview{margin-top:12px;display:none;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+.img-preview .thumb{position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;background:var(--surface);border:1px solid var(--border)}
+.img-preview .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.img-preview .thumb .thumb-remove{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(28,39,51,.75);color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:6px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .18s;text-decoration:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -376,8 +378,8 @@ section{padding:48px 0}
 <section id="inputSection" style="display:none">
   <div class="container">
 
-    <!-- PROGRESS -->
-    <div class="progress-track">
+    <!-- PROGRESS — Unfall-Funnel (voller Wizard) -->
+    <div class="progress-track" id="progressUnfall" style="display:none">
       <div class="progress-step">
         <div class="num active" id="p1">1</div>
         <span class="stxt active">Schaden</span>
@@ -399,18 +401,32 @@ section{padding:48px 0}
       </div>
     </div>
 
+    <!-- PROGRESS — Volumen-Funnel (kein Versicherungs-Schritt) -->
+    <div class="progress-track" id="progressVolumen" style="display:none">
+      <div class="progress-step">
+        <div class="num active">1</div>
+        <span class="stxt active">Schaden</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="num inactive">2</div>
+        <span class="stxt">Ergebnis</span>
+      </div>
+    </div>
+
     <!-- STEP 1: SCHADEN -->
     <div id="step1">
       <div class="card">
         <div class="card-title">Schadensfoto & Erstschätzung</div>
-        <div class="card-hint">Foto hochladen, KI schätzt den Schaden — oder direkt manuell eintragen, falls kein Foto da ist.</div>
+        <div class="card-hint" id="step1Hint">Foto hochladen, KI schätzt den Schaden — oder direkt manuell eintragen, falls kein Foto da ist.</div>
 
         <div class="upload-zone" id="uploadZone">
-          <input type="file" accept="image/*" onchange="handlePhoto(event)">
+          <input type="file" accept="image/*" multiple onchange="handlePhoto(event)">
           <div class="upload-icon">📷</div>
-          <div class="upload-text"><strong>Foto des Schadens</strong> auswählen oder ablegen</div>
+          <div class="upload-text"><strong>1–5 Fotos des Schadens</strong> auswählen oder ablegen</div>
+          <div class="upload-text" style="margin-top:2px;font-size:11px">Mehrere Winkel = bessere Einschätzung</div>
         </div>
-        <div class="img-preview" id="imgPreview"><img id="previewImg" src="" alt=""></div>
+        <div class="img-preview" id="imgPreview" style="display:none"></div>
 
         <!-- WERKSTATTTYP -->
         <div style="margin:18px 0 4px">
@@ -455,6 +471,10 @@ section{padding:48px 0}
         <div class="card">
           <div class="card-title">Schätzung freischalten</div>
           <div class="card-hint">Einmalig 3,99 € — KI-Analyse deines Fotos (oder deines manuellen Betrags), keine weiteren Schritte nötig.</div>
+          <div style="background:var(--green-dim);border:1px solid rgba(31,122,77,.25);border-radius:8px;padding:12px 14px;margin-bottom:16px">
+            <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:6px">💶 Das kann sich auszahlen</div>
+            <div style="font-size:12.5px;color:var(--grey-light);line-height:1.6">Werkstätten verlangen für einen Kostenvoranschlag oft 30–150 € — und ohne Referenzwert verhandelst du blind. Mit einer realistischen Zahl in der Hand vermeidest du, am Ende mehrere hundert Euro zu viel zu zahlen.</div>
+          </div>
           <div class="consent-box" style="text-align:left;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px">
             <input type="checkbox" id="cgConsentVolumen" onchange="cgToggleConsent('volumen')" style="margin-top:3px;flex-shrink:0;width:18px;height:18px">
             <label for="cgConsentVolumen" style="font-size:11.5px;color:var(--grey);line-height:1.5;text-align:left">Ich stimme ausdrücklich zu, dass mit der Bereitstellung der digitalen Analyse vor Ablauf der Widerrufsfrist begonnen wird, und bestätige, dass ich dadurch mein Widerrufsrecht verliere (§&nbsp;356 Abs.&nbsp;5 BGB).</label>
@@ -611,7 +631,12 @@ section{padding:48px 0}
           </div>
         </div>
 
-        <div class="consent-box" style="text-align:left;display:flex;gap:10px;align-items:flex-start;margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
+        <div style="background:var(--green-dim);border:1px solid rgba(31,122,77,.25);border-radius:8px;padding:12px 14px;margin-top:18px">
+          <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:6px">💶 Das kann sich auszahlen</div>
+          <div style="font-size:12.5px;color:var(--grey-light);line-height:1.6">Eine falsche Entscheidung — Versicherung melden statt selbst zahlen, oder umgekehrt — kann dich über die Rückstufung Hunderte Euro über mehrere Jahre kosten. Die 4,99 € zeigen dir schwarz auf weiß, welche Option für deinen Fall wirklich günstiger ist.</div>
+        </div>
+
+        <div class="consent-box" style="text-align:left;display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
           <input type="checkbox" id="cgConsentBundle" onchange="cgToggleConsent('bundle')" style="margin-top:3px;flex-shrink:0;width:18px;height:18px">
           <label for="cgConsentBundle" style="font-size:11.5px;color:var(--grey);line-height:1.5;text-align:left">Ich stimme ausdrücklich zu, dass mit der Bereitstellung der digitalen Analyse vor Ablauf der Widerrufsfrist begonnen wird, und bestätige, dass ich dadurch mein Widerrufsrecht verliere (§&nbsp;356 Abs.&nbsp;5 BGB).</label>
         </div>
@@ -783,7 +808,6 @@ const SF_BEITRAGSSATZ = {
 //  STATE
 // ═══════════════════════════════════════════════
 let currentStep = 1;
-let photoBase64 = null;
 let aiSchadenBetrag = null;
 let aiStufe = null; // 'klein'|'mittel'|'gross'|'total' — von KI gesetzt, fliesst in Sicherheits-Check ein
 let aiBeschreibung = '';
@@ -824,32 +848,76 @@ function goStep(n) {
 // ═══════════════════════════════════════════════
 //  FOTO & KI
 // ═══════════════════════════════════════════════
-function handlePhoto(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    document.getElementById('previewImg').src = ev.target.result;
-    document.getElementById('imgPreview').style.display = 'block';
-    document.getElementById('photoPrivacy').style.display = 'flex';
-    // Compress
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height, max = 1200;
-      if (w > max || h > max) { if (w > h) { h = Math.round(h*max/w); w = max; } else { w = Math.round(w*max/h); h = max; } }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      photoBase64 = canvas.toDataURL('image/jpeg', 0.82).split(',')[1];
+const MAX_FOTOS = 5;
+let photoBase64Arr = []; // ersetzt das alte einzelne photoBase64
+
+function compressFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height, max = 1200;
+        if (w > max || h > max) { if (w > h) { h = Math.round(h*max/w); w = max; } else { w = Math.round(w*max/h); h = max; } }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.78).split(',')[1]);
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
     };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handlePhoto(e) {
+  const files = Array.from(e.target.files || []).slice(0, MAX_FOTOS - photoBase64Arr.length);
+  if (!files.length) return;
+  if (photoBase64Arr.length >= MAX_FOTOS) { toast('Maximal ' + MAX_FOTOS + ' Fotos'); return; }
+
+  for (const file of files) {
+    try {
+      const b64 = await compressFile(file);
+      photoBase64Arr.push(b64);
+    } catch (err) { console.warn('Foto-Fehler:', err); }
+  }
+  e.target.value = ''; // erlaubt erneutes Auswählen derselben Datei
+  renderPhotoPreview();
+}
+
+function removePhoto(idx) {
+  photoBase64Arr.splice(idx, 1);
+  renderPhotoPreview();
+}
+
+function renderPhotoPreview() {
+  const wrap = document.getElementById('imgPreview');
+  const privacy = document.getElementById('photoPrivacy');
+  if (!photoBase64Arr.length) {
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    privacy.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'grid';
+  privacy.style.display = 'flex';
+  wrap.innerHTML = photoBase64Arr.map((b64, i) =>
+    '<div class="thumb"><img src="data:image/jpeg;base64,' + b64 + '" alt="Foto ' + (i+1) + '">' +
+    '<button type="button" class="thumb-remove" onclick="removePhoto(' + i + ')">✕</button></div>'
+  ).join('');
 }
 
 // Läuft NUR nach bestätigter Zahlung (aufgerufen aus tryRestorePaidAnalysis).
 // Wirft bei Fehlern, damit der Aufrufer den Nutzer entsprechend informieren kann.
 async function analysePhotoPaid() {
-  if (!photoBase64) return;
+  if (!photoBase64Arr.length) return;
+
+  const imageBlocks = photoBase64Arr.map(b64 => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } }));
+  const anzahlHinweis = photoBase64Arr.length > 1
+    ? `Du erhältst ${photoBase64Arr.length} Fotos desselben Schadens aus verschiedenen Winkeln/Entfernungen — nutze alle für eine präzisere Einschätzung, insbesondere für die Erkennung von Tiefe, Rissen und Bauteilgrenzen.`
+    : 'Du erhältst ein Foto des Schadens.';
 
   const res = await fetch('https://ysqzdqazcgyuzdorauiq.supabase.co/functions/v1/claude-proxy', {
     method: 'POST',
@@ -864,8 +932,8 @@ async function analysePhotoPaid() {
       messages: [{
         role: 'user',
         content: [
-          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photoBase64 }},
-          { type: 'text', text: `Du bist KFZ-Sachverständiger. Analysiere diesen Fahrzeugschaden und antworte NUR in diesem JSON-Format ohne weitere Erklärungen:
+          ...imageBlocks,
+          { type: 'text', text: `Du bist KFZ-Sachverständiger. ${anzahlHinweis} Analysiere diesen Fahrzeugschaden und antworte NUR in diesem JSON-Format ohne weitere Erklärungen:
 {"beschreibung":"Schadensbeschreibung inkl. wahrscheinlicher verdeckter Schäden (max 3 Sätze)","betrag_min":500,"betrag_max":900,"stufe":"klein|mittel|gross|total"}
 
 Werkstatttyp: ${WERKSTATT[currentWerkstatt].label} (Stundensatz ~€${WERKSTATT[currentWerkstatt].stundensatz}/h).
@@ -1104,10 +1172,11 @@ function resetApp() {
   document.getElementById('volumenResult').style.display = 'none';
   document.getElementById('inputSection').style.display = 'none';
   document.getElementById('introSection').style.display = 'block';
-  photoBase64 = null; aiSchadenBetrag = null; aiStufe = null;
+  photoBase64Arr = []; aiSchadenBetrag = null; aiStufe = null;
   aiBeschreibung = ''; aiBetragMin = null; aiBetragMax = null;
   document.getElementById('schadenBetrag').value = '';
   document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('imgPreview').innerHTML = '';
   document.getElementById('photoPrivacy').style.display = 'none';
   ['cgConsentVolumen','cgConsentBundle'].forEach(id => {
     const box = document.getElementById(id);
@@ -1143,13 +1212,13 @@ function cgToggleConsent(kind) {
 function fieldVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
 
 function payWall(product) {
-  if (!photoBase64 && !fieldVal('schadenBetrag')) {
-    toast('Bitte Foto hochladen oder Betrag eingeben'); return;
+  if (!photoBase64Arr.length && !fieldVal('schadenBetrag')) {
+    toast('Bitte Foto(s) hochladen oder Betrag eingeben'); return;
   }
   const snapshot = {
     product: product, // 'ks' | 'bundle'
     funnel: cgIntroState.funnel,
-    photoBase64: photoBase64,
+    photoBase64Arr: photoBase64Arr,
     werkstatt: currentWerkstatt,
     schadenBetrag: fieldVal('schadenBetrag'),
     fahrzeugModell: fieldVal('fahrzeugModell'),
@@ -1179,7 +1248,7 @@ async function tryRestorePaidAnalysis() {
   try { snap = JSON.parse(raw); } catch(e) { toast('Fehler beim Wiederherstellen.'); cleanPaidUrl(); return; }
   localStorage.removeItem(CG_PENDING_KEY); // Einmal-Nutzung — verhindert erneuten Zugriff ohne neue Zahlung
 
-  photoBase64 = snap.photoBase64 || null;
+  photoBase64Arr = snap.photoBase64Arr || (snap.photoBase64 ? [snap.photoBase64] : []); // photoBase64-Fallback für alte Snapshots
   currentWerkstatt = snap.werkstatt || 'frei';
   cgIntroState.funnel = snap.funnel;
 
@@ -1197,7 +1266,7 @@ async function tryRestorePaidAnalysis() {
   toast('Zahlung erfolgreich — Analyse läuft ✓', true);
 
   try {
-    if (photoBase64) await analysePhotoPaid();
+    if (photoBase64Arr.length) await analysePhotoPaid();
   } catch (e) {
     toast('KI-Analyse fehlgeschlagen (' + (e?.message || e) + ') — bitte Betrag manuell prüfen.');
   }
@@ -1217,9 +1286,9 @@ function showVolumenResult() {
     aiBetragMin && aiBetragMax ? '€' + aiBetragMin.toLocaleString('de') + ' – €' + aiBetragMax.toLocaleString('de') : '€' + Math.round(betrag).toLocaleString('de');
   document.getElementById('vrText').textContent = aiBeschreibung || 'Manuell eingegebener Betrag, keine Foto-Analyse vorhanden.';
   const img = document.getElementById('vrImg');
-  if (photoBase64) {
+  if (photoBase64Arr.length) {
     img.style.display = 'block';
-    img.innerHTML = '<img src="data:image/jpeg;base64,' + photoBase64 + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px" alt="Schaden">';
+    img.innerHTML = '<img src="data:image/jpeg;base64,' + photoBase64Arr[0] + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px" alt="Schaden">';
   } else {
     img.style.display = 'none';
   }
@@ -1599,6 +1668,11 @@ function proceedToUpload() {
   const isVolumen = cgIntroState.funnel === 'volumen';
   document.getElementById('volumenCta').style.display = isVolumen ? 'block' : 'none';
   document.getElementById('unfallCta').style.display = isVolumen ? 'none' : 'flex';
+  document.getElementById('progressVolumen').style.display = isVolumen ? 'flex' : 'none';
+  document.getElementById('progressUnfall').style.display = isVolumen ? 'none' : 'flex';
+  document.getElementById('step1Hint').textContent = isVolumen
+    ? '1–5 Fotos hochladen, KI schätzt die Reparaturkosten — kein Versicherungs-Schritt nötig.'
+    : 'Foto hochladen, KI schätzt den Schaden — oder direkt manuell eintragen, falls kein Foto da ist.';
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
