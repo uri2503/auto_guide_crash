@@ -603,6 +603,13 @@ section{padding:48px 0}
 
     <div class="scenario-grid" id="scenarioGrid"></div>
 
+    <div id="safetyBanner" style="display:none;background:var(--signal-dim);border:1.5px solid var(--signal);border-radius:8px;padding:14px 16px;margin:-12px 0 20px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--signal);font-weight:700;margin-bottom:6px">⚠ Sicherheitsrelevanter Schaden</div>
+      <div style="font-size:12.5px;color:var(--grey-light);line-height:1.7">
+        Bei Schäden dieser Größenordnung zeigt ein einzelnes Foto keine verdeckten Schäden an Struktur, Fahrwerk, Kühler oder Sensorik. <strong style="color:var(--white)">Lass das Fahrzeug vor der Weiterfahrt von einer Werkstatt prüfen</strong> — diese App ersetzt keine sicherheitsrelevante Begutachtung.
+      </div>
+    </div>
+
     <div class="breakdown" id="breakdownBox"></div>
 
     <div style="background:var(--amber-dim);border:1px solid rgba(181,121,15,.25);border-radius:8px;padding:14px 16px;margin-top:16px">
@@ -725,6 +732,8 @@ const SF_BEITRAGSSATZ = {
 let currentStep = 1;
 let photoBase64 = null;
 let aiSchadenBetrag = null;
+let aiStufe = null; // 'klein'|'mittel'|'gross'|'total' — von KI gesetzt, fliesst in Sicherheits-Check ein
+const SICHERHEITS_SCHWELLE = 2500; // Ab diesem Betrag OHNE KI-Stufe (manuelle Eingabe) vorsichtshalber als sicherheitsrelevant behandeln
 
 // ═══════════════════════════════════════════════
 //  NAVIGATION
@@ -820,11 +829,15 @@ async function analysePhoto() {
           content: [
             { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photoBase64 }},
             { type: 'text', text: `Du bist KFZ-Sachverständiger. Analysiere diesen Fahrzeugschaden und antworte NUR in diesem JSON-Format ohne weitere Erklärungen:
-{"beschreibung":"kurze Schadensbeschreibung (max 2 Sätze)","betrag_min":500,"betrag_max":900,"stufe":"klein|mittel|gross|total"}
+{"beschreibung":"Schadensbeschreibung inkl. wahrscheinlicher verdeckter Schäden (max 3 Sätze)","betrag_min":500,"betrag_max":900,"stufe":"klein|mittel|gross|total"}
 
 Werkstatttyp: ${WERKSTATT[currentWerkstatt].label} (Stundensatz ~€${WERKSTATT[currentWerkstatt].stundensatz}/h).
-Stufen: klein=Kratzer/Delle bis 5cm, mittel=größere Delle/Lackschaden, gross=Verformung/Austausch nötig, total=Totalschaden.
-Betrag = realistische Reparaturkosten für diesen Werkstatttyp inkl. Material und Arbeit in Euro.` }
+Stufen: klein=Kratzer/Delle bis 5cm ohne erkennbare Funktionsteile betroffen, mittel=größere Delle/Lackschaden, gross=Verformung/Bauteilbruch/Austausch nötig, total=Totalschaden.
+
+WICHTIGE FACHLICHE HINWEISE für realistische Schätzung:
+- Bei JEDEM Aufprallschaden (auch optisch klein) auf Stoßstangen/Verkleidungen: Dahinterliegende Halterungen, Clips und Träger brechen häufig, auch wenn das Foto das nicht zeigt. Erwähne das bei Stufe mittel/gross/total explizit in der Beschreibung und kalkuliere es im Betrag ein.
+- Bei Lackschäden auf Metallic-, Perleffekt- oder hellen/silbernen Lacken: Eine Teillackierung ist meist sichtbar (Farbtonunterschied) — kalkuliere Beilackierung angrenzender Bauteile ein, nicht nur das beschädigte Teil.
+- Bei Stufe gross oder total: Ein Einzelfoto zeigt KEINE strukturellen/mechanischen Schäden (Kühler, Frontquerträger, Sensorik, Fahrwerk). Weise in der Beschreibung explizit darauf hin, dass die tatsächlichen Kosten bei solchen Schäden den sichtbaren Schaden deutlich übersteigen können, und setze betrag_max entsprechend großzügig an (Sicherheitsaufschlag).` }
           ]
         }]
       })
@@ -837,6 +850,7 @@ Betrag = realistische Reparaturkosten für diesen Werkstatttyp inkl. Material un
 
     const maxBetrag = parsed.betrag_max;  // Maximalwert — konservative Schätzung
     aiSchadenBetrag = maxBetrag;
+    aiStufe = parsed.stufe || null;
     document.getElementById('schadenBetrag').value = maxBetrag;
     document.getElementById('aiText').textContent =
       `${parsed.beschreibung} — Geschätzte Kosten: €${parsed.betrag_min.toLocaleString('de')} – €${parsed.betrag_max.toLocaleString('de')} (Maximalwert übernommen)`;
@@ -856,7 +870,7 @@ Betrag = realistische Reparaturkosten für diesen Werkstatttyp inkl. Material un
   }
 }
 
-function syncManualInput() { aiSchadenBetrag = null; }
+function syncManualInput() { aiSchadenBetrag = null; aiStufe = null; }
 
 // ═══════════════════════════════════════════════
 //  WERTMINDERUNG
@@ -948,8 +962,25 @@ function berechne() {
   const s1 = schaden;
   const s2 = sb + gesamtMehrkosten;
   const s3 = wertminderung;
-  const minKosten = Math.min(s1, s2, s3);
-  const empfehlung = minKosten === s1 ? 'self' : (minKosten === s2 ? 'versicherung' : 'nichts');
+
+  // ── SICHERHEITSNETZ ──
+  // "Nichts tun" darf NIEMALS empfohlen werden, wenn der Schaden sicherheitsrelevant sein koennte —
+  // unabhaengig davon, ob es rechnerisch die guenstigste Option waere. Greift auf KI-Stufe zurueck,
+  // faellt bei manueller Eingabe (keine KI-Stufe bekannt) auf eine Betragsschwelle zurueck.
+  const istSicherheitsrelevant = (aiStufe === 'gross' || aiStufe === 'total')
+    || (!aiStufe && schaden >= SICHERHEITS_SCHWELLE);
+
+  let minKosten = Math.min(s1, s2, s3);
+  let empfehlung = minKosten === s1 ? 'self' : (minKosten === s2 ? 'versicherung' : 'nichts');
+
+  if (istSicherheitsrelevant && empfehlung === 'nichts') {
+    empfehlung = s1 <= s2 ? 'self' : 'versicherung';
+    minKosten = s1 <= s2 ? s1 : s2;
+  }
+
+  // Sicherheitshinweis einblenden/verstecken
+  const safetyBanner = document.getElementById('safetyBanner');
+  if (safetyBanner) safetyBanner.style.display = istSicherheitsrelevant ? 'block' : 'none';
 
   // Headline
   const headlines = {
@@ -957,7 +988,8 @@ function berechne() {
     versicherung: 'Versicherung melden kann sich lohnen.',
     nichts: 'Schaden hinnehmen hat den kleinsten Soforteffekt.'
   };
-  document.getElementById('resultHeadline').textContent = headlines[empfehlung];
+  document.getElementById('resultHeadline').textContent =
+    (istSicherheitsrelevant ? '⚠ Sicherheitsrelevant — ' : '') + headlines[empfehlung];
 
   // Szenarien-Karten
   const rabattHinweis = rabattschutz ? ' — Rabattschutz aktiv!' : '';
@@ -967,11 +999,11 @@ function berechne() {
 
   const s1Class = s1 === minKosten ? 'green' : 'red';
   const s2Class = s2 === minKosten ? 'green' : (s2 < s1 * 1.5 ? 'amber' : 'red');
-  const s3Class = s3 === minKosten ? 'green' : 'amber';
+  const s3Class = istSicherheitsrelevant ? 'red' : (s3 === minKosten ? 'green' : 'amber');
 
   const sc1Winner = empfehlung === 'self' ? 'winner' : (s1 < s2 * 1.15 ? 'warning' : '');
   const sc2Winner = empfehlung === 'versicherung' ? 'winner' : (s2 < s1 * 1.15 ? 'warning' : 'danger');
-  const sc3Winner = empfehlung === 'nichts' ? 'winner' : '';
+  const sc3Winner = istSicherheitsrelevant ? 'danger' : (empfehlung === 'nichts' ? 'winner' : '');
 
   const grid = document.getElementById('scenarioGrid');
   grid.innerHTML = '';
@@ -1005,7 +1037,9 @@ function berechne() {
 
   makeCard(sc3Winner, '🚗', 'Option 3', 'Nichts tun',
     Math.round(s3), s3Class,
-    'Kein Geld jetzt, aber Wertverlust. Schaetzung: ' + wmPct + '% Wertminderung. ' + wertHinweis);
+    istSicherheitsrelevant
+      ? 'Davon raten wir ab: Bei diesem Schaden sind verdeckte Schäden an Halterungen, Sensorik oder Struktur wahrscheinlich. Unrepariert ein Sicherheits- und Haftungsrisiko.'
+      : 'Kein Geld jetzt, aber Wertverlust. Schaetzung: ' + wmPct + '% Wertminderung. ' + wertHinweis);
 
   // Detailrechnung
   const rows = [
@@ -1045,7 +1079,7 @@ function berechne() {
 function resetApp() {
   document.getElementById('result').style.display = 'none';
   document.getElementById('inputSection').style.display = 'block';
-  photoBase64 = null; aiSchadenBetrag = null;
+  photoBase64 = null; aiSchadenBetrag = null; aiStufe = null;
   document.getElementById('schadenBetrag').value = '';
   document.getElementById('imgPreview').style.display = 'none';
   document.getElementById('aiSection').style.display = 'none';
