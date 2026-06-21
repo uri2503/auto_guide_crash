@@ -668,7 +668,8 @@ section{padding:48px 0}
       <div style="font-size:12.5px;color:var(--grey-light);line-height:1.7">Diese Berechnung ist eine unverbindliche Orientierungshilfe — kein Kostenvoranschlag, kein Gutachten. Für ein verbindliches Angebot wende dich an eine Werkstatt deiner Wahl.</div>
     </div>
     <div class="action-row" style="max-width:560px;margin:20px auto 0">
-      <button class="btn btn-ghost btn-full" onclick="resetApp()">← Neue Prüfung</button>
+      <button class="btn btn-ghost" onclick="resetApp()" style="flex:1">← Neue Prüfung</button>
+      <button class="btn btn-primary" onclick="exportVolumenPDF()" style="flex:1">⬇ Als PDF speichern</button>
     </div>
   </div>
 </section>
@@ -1491,6 +1492,85 @@ function exportPDF() {
   toast('PDF gespeichert: ' + filename, true);
 }
 
+function exportVolumenPDF() {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { toast('PDF-Bibliothek nicht geladen — bitte kurz warten'); return; }
+
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const W = 210; const margin = 18; const contentW = W - margin * 2;
+  let y = 20;
+
+  const COL_GREEN  = [31,  122,  77];
+  const COL_AMBER  = [181, 121,  15];
+  const COL_PRIMARY= [27,   58,  92];
+  const COL_BLACK  = [28,   39,  51];
+
+  function setColor(rgb) { doc.setTextColor(rgb[0], rgb[1], rgb[2]); }
+
+  // ── HEADER ──
+  doc.setFillColor(COL_PRIMARY[0], COL_PRIMARY[1], COL_PRIMARY[2]);
+  doc.rect(0, 0, W, 36, 'F');
+  doc.setFillColor(COL_GREEN[0], COL_GREEN[1], COL_GREEN[2]);
+  doc.rect(0, 33, W, 3, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(22);
+  setColor([250,249,246]);
+  doc.text('CrashGuide', margin, 16);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  setColor([180,195,210]);
+  doc.text('Schadensschätzung', margin, 24);
+  doc.text('Erstellt am ' + new Date().toLocaleDateString('de-DE'), W - margin, 24, {align:'right'});
+  y = 50;
+
+  // ── FOTO (falls vorhanden) ──
+  if (photoBase64Arr.length) {
+    try {
+      const imgW = contentW; const imgH = imgW * 0.6;
+      doc.addImage('data:image/jpeg;base64,' + photoBase64Arr[0], 'JPEG', margin, y, imgW, imgH);
+      y += imgH + 10;
+    } catch(e) { console.warn('PDF-Bild-Fehler:', e); }
+  }
+
+  // ── KOSTENSPANNE ──
+  doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  setColor(COL_PRIMARY);
+  doc.text(document.getElementById('vrCost').textContent, margin, y);
+  y += 10;
+
+  // ── BESCHREIBUNG ──
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  setColor(COL_BLACK);
+  const descLines = doc.splitTextToSize(document.getElementById('vrText').textContent, contentW);
+  doc.text(descLines, margin, y);
+  y += descLines.length * 5.5 + 10;
+
+  // ── DISCLAIMER ──
+  doc.setFillColor(251,243,224);
+  doc.rect(margin - 2, y - 3, contentW + 4, 20, 'F');
+  doc.setDrawColor(COL_AMBER[0],COL_AMBER[1],COL_AMBER[2]);
+  doc.setLineWidth(0.4);
+  doc.line(margin - 2, y - 3, margin - 2, y + 17);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7);
+  setColor(COL_AMBER);
+  doc.text('WICHTIGER HINWEIS', margin + 2, y + 1);
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+  setColor([122,85,0]);
+  const disclaimer = 'Diese Berechnung ist eine unverbindliche Orientierungshilfe - kein Kostenvoranschlag und kein Gutachten. Fuer ein verbindliches Angebot wende dich an eine Werkstatt deiner Wahl.';
+  doc.text(doc.splitTextToSize(disclaimer, contentW - 4), margin + 2, y + 7);
+  y += 24;
+
+  // ── FOOTER ──
+  doc.setFillColor(240,240,240);
+  doc.rect(0, 282, W, 15, 'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(7);
+  setColor([100,100,100]);
+  doc.text('CrashGuide · uri2503.github.io/auto_guide_crash', margin, 290);
+  doc.text('Seite 1 / 1', W - margin, 290, {align:'right'});
+
+  const filename = 'CrashGuide_Schaetzung_' + new Date().toISOString().slice(0,10) + '.pdf';
+  doc.save(filename);
+  toast('PDF gespeichert: ' + filename, true);
+}
+
 // ═══════════════════════════════════════════════
 //  TOAST
 // ═══════════════════════════════════════════════
@@ -1527,8 +1607,8 @@ const DEMO_CASES = {
     sev: 'klein',
     label: 'Kratzer Stoßstange',
     sub: 'Bagatellschaden',
-    beschreibung: 'Oberflächlicher Lackkratzer auf der hinteren Stoßstange, ca. 12 cm lang. Kein Strukturschaden, keine Durchdringung bis zum Untergrund erkennbar.',
-    kostenMin: 950, kostenMax: 1600,
+    beschreibung: 'Der BMW Z4 sDrive20i (E89) zeigt an der linken vorderen Stoßfängerverkleidung einen ausgeprägten Schleifschaden mit Lackabrieb, Kratzern und einem Durchbruch/Riss im Kunststoff (ca. 8–12 cm Schadensbereich), vermutlich durch seitlichen Kontakt mit einem festen Objekt. Die Stoßfängerverkleidung muss voraussichtlich ausgetauscht werden, da der Kunststoff gerissen ist; dahinterliegende Halterungsclips, der Stoßfängerträger sowie ggf. der Nebelscheinwerferrahmen links sind sehr wahrscheinlich mitbeschädigt. Aufgrund des silbernen Metalliclacks (Titansilber) ist eine Beilackierung der angrenzenden Bauteile (linker Kotflügel, ggf. Motorhaube) erforderlich, um einen sichtbaren Farbtonunterschied zu vermeiden.',
+    kostenMin: 1400, kostenMax: 2400,
     ctaTon: 'So detailliert analysieren wir.'
   },
   delle: {
