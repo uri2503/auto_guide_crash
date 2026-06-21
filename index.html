@@ -509,6 +509,21 @@ section{padding:48px 0}
             <input type="number" id="fahrzeugBaujahr" placeholder="z.B. 2018" min="1990" max="2025">
           </div>
         </div>
+
+        <div style="margin:14px 0;text-align:center;position:relative">
+          <span style="background:var(--card);padding:0 10px;color:var(--grey);font-size:11px;position:relative;z-index:1">oder Kfz-Schein hochladen — füllt Marke/Modell/Baujahr automatisch</span>
+          <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)"></div>
+        </div>
+        <div class="upload-zone" id="kfzScheinZone" style="padding:16px">
+          <input type="file" accept="image/*" onchange="handleKfzSchein(event)">
+          <div class="upload-icon" style="font-size:22px;margin-bottom:4px">🪪</div>
+          <div class="upload-text"><strong>Zulassungsbescheinigung Teil I</strong> (Vorderseite) auswählen</div>
+        </div>
+        <div class="img-preview" id="kfzScheinPreview" style="display:none;margin-top:10px;max-width:200px"></div>
+        <div style="font-size:11px;color:var(--grey);margin-top:6px;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)">
+          🔒 Wir lesen ausschließlich Marke, Modell und Erstzulassung aus — Name, Anschrift, Kennzeichen und Fahrgestellnummer werden nicht verarbeitet oder gespeichert.
+        </div>
+
         <div class="field">
           <label>Aktueller Fahrzeugwert (€)</label>
           <input type="number" id="fahrzeugWert" placeholder="z.B. 15000" min="0">
@@ -853,6 +868,25 @@ function goStep(n) {
 // ═══════════════════════════════════════════════
 const MAX_FOTOS = 5;
 let photoBase64Arr = []; // ersetzt das alte einzelne photoBase64
+let kfzScheinBase64 = null; // optional, nur Unfall-Funnel — Marke/Modell/Baujahr-Erkennung
+
+function handleKfzSchein(e) {
+  const file = e.target.files[0]; if (!file) return;
+  compressFile(file).then(b64 => {
+    kfzScheinBase64 = b64;
+    const wrap = document.getElementById('kfzScheinPreview');
+    wrap.style.display = 'block';
+    wrap.innerHTML = '<div class="thumb" style="aspect-ratio:1.6"><img src="data:image/jpeg;base64,' + b64 + '" alt="Kfz-Schein">' +
+      '<button type="button" class="thumb-remove" onclick="removeKfzSchein()">✕</button></div>';
+  }).catch(err => { console.warn('Kfz-Schein-Fehler:', err); toast('Foto konnte nicht gelesen werden'); });
+}
+
+function removeKfzSchein() {
+  kfzScheinBase64 = null;
+  const wrap = document.getElementById('kfzScheinPreview');
+  wrap.style.display = 'none';
+  wrap.innerHTML = '';
+}
 
 function compressFile(file) {
   return new Promise((resolve, reject) => {
@@ -918,9 +952,17 @@ async function analysePhotoPaid() {
   if (!photoBase64Arr.length) return;
 
   const imageBlocks = photoBase64Arr.map(b64 => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } }));
-  const anzahlHinweis = photoBase64Arr.length > 1
+  let anzahlHinweis = photoBase64Arr.length > 1
     ? `Du erhältst ${photoBase64Arr.length} Fotos desselben Schadens aus verschiedenen Winkeln/Entfernungen — nutze alle für eine präzisere Einschätzung, insbesondere für die Erkennung von Tiefe, Rissen und Bauteilgrenzen.`
     : 'Du erhältst ein Foto des Schadens.';
+
+  let kfzScheinHinweis = '';
+  let jsonFields = '"beschreibung":"Schadensbeschreibung inkl. wahrscheinlicher verdeckter Schäden (max 3 Sätze)","betrag_min":500,"betrag_max":900,"stufe":"klein|mittel|gross|total"';
+  if (kfzScheinBase64) {
+    imageBlocks.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: kfzScheinBase64 } });
+    kfzScheinHinweis = `Das letzte Bild ist die Zulassungsbescheinigung Teil I (Kfz-Schein) des Fahrzeugs — nutze sie, um Marke, Modell und Erstzulassungsjahr zu erkennen und die Schadensschätzung darauf zuzuschneiden (z.B. modellspezifische Ersatzteilpreise). WICHTIG: Gib NIEMALS Halter-Name, Adresse, Kennzeichen oder Fahrgestellnummer aus — auch nicht in der Beschreibung. Nur Marke/Modell/Baujahr werden in den dafür vorgesehenen JSON-Feldern zurückgegeben.`;
+    jsonFields += ',"fahrzeug_marke":"BMW","fahrzeug_modell":"Z4 sDrive20i","fahrzeug_baujahr":2018';
+  }
 
   const res = await fetch('https://ysqzdqazcgyuzdorauiq.supabase.co/functions/v1/claude-proxy', {
     method: 'POST',
@@ -936,8 +978,8 @@ async function analysePhotoPaid() {
         role: 'user',
         content: [
           ...imageBlocks,
-          { type: 'text', text: `Du bist KFZ-Sachverständiger. ${anzahlHinweis} Analysiere diesen Fahrzeugschaden und antworte NUR in diesem JSON-Format ohne weitere Erklärungen:
-{"beschreibung":"Schadensbeschreibung inkl. wahrscheinlicher verdeckter Schäden (max 3 Sätze)","betrag_min":500,"betrag_max":900,"stufe":"klein|mittel|gross|total"}
+          { type: 'text', text: `Du bist KFZ-Sachverständiger. ${anzahlHinweis} ${kfzScheinHinweis} Analysiere diesen Fahrzeugschaden und antworte NUR in diesem JSON-Format ohne weitere Erklärungen:
+{${jsonFields}}
 
 Werkstatttyp: ${WERKSTATT[currentWerkstatt].label} (Stundensatz ~€${WERKSTATT[currentWerkstatt].stundensatz}/h).
 Stufen: klein=Kratzer/Delle bis 5cm ohne erkennbare Funktionsteile betroffen, mittel=größere Delle/Lackschaden, gross=Verformung/Bauteilbruch/Austausch nötig, total=Totalschaden.
@@ -962,6 +1004,13 @@ WICHTIGE FACHLICHE HINWEISE für realistische Schätzung:
   aiBetragMin = parsed.betrag_min;
   aiBetragMax = parsed.betrag_max;
   document.getElementById('schadenBetrag').value = parsed.betrag_max;
+
+  if (kfzScheinBase64 && parsed.fahrzeug_marke) {
+    const modellFeld = document.getElementById('fahrzeugModell');
+    const baujahrFeld = document.getElementById('fahrzeugBaujahr');
+    if (modellFeld && !modellFeld.value) modellFeld.value = (parsed.fahrzeug_marke + ' ' + (parsed.fahrzeug_modell || '')).trim();
+    if (baujahrFeld && !baujahrFeld.value && parsed.fahrzeug_baujahr) baujahrFeld.value = parsed.fahrzeug_baujahr;
+  }
 }
 
 function syncManualInput() { aiSchadenBetrag = null; aiStufe = null; }
@@ -1176,6 +1225,9 @@ function resetApp() {
   document.getElementById('inputSection').style.display = 'none';
   document.getElementById('introSection').style.display = 'block';
   photoBase64Arr = []; aiSchadenBetrag = null; aiStufe = null;
+  kfzScheinBase64 = null;
+  document.getElementById('kfzScheinPreview').style.display = 'none';
+  document.getElementById('kfzScheinPreview').innerHTML = '';
   aiBeschreibung = ''; aiBetragMin = null; aiBetragMax = null;
   document.getElementById('schadenBetrag').value = '';
   document.getElementById('imgPreview').style.display = 'none';
@@ -1222,6 +1274,7 @@ function payWall(product) {
     product: product, // 'ks' | 'bundle'
     funnel: cgIntroState.funnel,
     photoBase64Arr: photoBase64Arr,
+    kfzScheinBase64: kfzScheinBase64,
     werkstatt: currentWerkstatt,
     schadenBetrag: fieldVal('schadenBetrag'),
     fahrzeugModell: fieldVal('fahrzeugModell'),
@@ -1252,6 +1305,7 @@ async function tryRestorePaidAnalysis() {
   localStorage.removeItem(CG_PENDING_KEY); // Einmal-Nutzung — verhindert erneuten Zugriff ohne neue Zahlung
 
   photoBase64Arr = snap.photoBase64Arr || (snap.photoBase64 ? [snap.photoBase64] : []); // photoBase64-Fallback für alte Snapshots
+  kfzScheinBase64 = snap.kfzScheinBase64 || null;
   currentWerkstatt = snap.werkstatt || 'frei';
   cgIntroState.funnel = snap.funnel;
 
