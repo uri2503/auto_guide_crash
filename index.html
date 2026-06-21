@@ -731,8 +731,10 @@ const SUPA_ANON_KEY = 'sb_publishable_v4kXJa0y-2EHsCFPqBFHfg_QvzKLnt2';
 // WICHTIG: In Stripe muss unter "After payment" die Redirect-URL auf
 // genau diese Seite + "?paid=1" gesetzt werden, z.B.:
 // https://uri2503.github.io/auto_guide_crash/?paid=1
-const STRIPE_KS_LINK = 'https://buy.stripe.com/test_PLATZHALTER_KS';         // 3,99 € — Volumen-Funnel, nur KI-Schätzung
-const STRIPE_BUNDLE_LINK = 'https://buy.stripe.com/test_PLATZHALTER_BUNDLE'; // 4,99 € — Unfall-Funnel, komplettes Ergebnis
+// ⚠️ TODO VOR GO-LIVE: Das sind TEST-Mode-Links (buy.stripe.com/test_...). Vor echtem Launch
+// im Stripe Dashboard auf Live-Modus umschalten und die Live-Links hier eintragen.
+const STRIPE_KS_LINK = 'https://buy.stripe.com/test_aFaeVc6nicQuaj6gdXcwg01';     // 3,99 € — Volumen-Funnel, nur KI-Schätzung
+const STRIPE_BUNDLE_LINK = 'https://buy.stripe.com/test_aFaaEW5je17M0Iw6Dncwg02'; // 4,99 € — Unfall-Funnel, komplettes Ergebnis
 const CG_PENDING_KEY = 'cg_pending_analysis';
 
 // ═══════════════════════════════════════════════
