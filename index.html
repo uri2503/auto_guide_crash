@@ -209,6 +209,15 @@ section{padding:48px 0}
 .intro-cta-secondary{background:none;border:none;color:var(--grey);font-size:12.5px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px;-webkit-tap-highlight-color:transparent}
 .bundle-hint{background:var(--amber-dim);border:1px solid rgba(181,121,15,.25);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--grey-light);margin-top:10px}
 .bundle-hint strong{color:var(--amber)}
+.reality-box{background:var(--signal-dim);border:1.5px solid var(--signal);border-radius:8px;padding:14px 16px;margin-top:14px;display:none}
+.reality-box.show{display:block}
+.reality-box .reality-eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--signal);font-weight:700;margin-bottom:8px}
+.reality-compare{display:flex;align-items:center;gap:14px;margin:8px 0}
+.reality-compare .rc-item{flex:1;text-align:center}
+.reality-compare .rc-label{font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.reality-compare .rc-val{font-family:var(--font-display);font-weight:700;font-size:19px}
+.reality-compare .rc-arrow{color:var(--grey);font-size:18px}
+.reality-box .reality-text{font-size:12.5px;color:var(--grey-light);line-height:1.7;margin-top:8px}
 
 /* ── MOBILE ── */
 @media(max-width:600px){
@@ -314,6 +323,21 @@ section{padding:48px 0}
             <strong>Tatsächliche KI-Einschätzung</strong>
             <span id="revealKSText"></span>
             <div class="reveal-cost" id="revealKSCost"></div>
+            <div class="reality-box" id="realityBox">
+              <div class="reality-eyebrow">⚠ Was wirklich passiert ist</div>
+              <div class="reality-compare">
+                <div class="rc-item">
+                  <div class="rc-label">KI-Schätzung</div>
+                  <div class="rc-val" style="color:var(--grey-light)" id="realityAiVal"></div>
+                </div>
+                <div class="rc-arrow">→</div>
+                <div class="rc-item">
+                  <div class="rc-label">Tatsächlich</div>
+                  <div class="rc-val" style="color:var(--signal)" id="realityRealVal"></div>
+                </div>
+              </div>
+              <div class="reality-text" id="realityText"></div>
+            </div>
             <div class="reveal-pitch">
               Genau diese Tiefe an Information bekommst du für <strong>deinen eigenen Schaden für 3,99 €</strong>. Ein Lackierer verlangt für einen Kostenvoranschlag oft 30–150 € — die du bei Nichtbeauftragung meist nicht zurückbekommst.
             </div>
@@ -1387,6 +1411,9 @@ const DEMO_CASES = {
     sub: 'Erheblicher Schaden',
     beschreibung: 'Frontschaden nach Kollision: Stoßstange rechts gerissen, Scheinwerfer zerstört, sichtbare Deformation im Übergang zum Kotflügel. Instandsetzung erfordert Neuteile (Stoßstange, Scheinwerfer) und Lackierarbeiten.',
     kostenMin: 1850, kostenMax: 3200,
+    realBetrag: 12000,
+    realQuelle: 'Gutachten der gegnerischen Versicherung',
+    realErklaerung: 'Kühler, Frontquerträger und Sensorik waren mitbeschädigt — auf dem Foto nicht erkennbar.',
     rsBeschreibung: 'Bei HUK-COBURG, Vollkasko, SF 10: Rückstufung auf SF 3. Beitragsmehrkosten von ca. €380/Jahr für ~14 Jahre, bis die ursprüngliche SF-Klasse wieder erreicht ist — Gesamtmehrkosten ca. €5.300.',
     ctaTon: 'Echte Entscheidungsgrundlage für deinen Fall.'
   }
@@ -1433,6 +1460,7 @@ function selectCase(id) {
   document.getElementById('guessKSInput').value = '';
   document.getElementById('guessStepKS').style.display = 'block';
   document.getElementById('revealKSBox').classList.remove('show');
+  document.getElementById('realityBox').classList.remove('show');
   document.getElementById('guessStepRS').style.display = 'none';
   document.getElementById('revealRSBox').classList.remove('show');
   document.getElementById('caseCtaRow').style.display = 'none';
@@ -1446,6 +1474,19 @@ function revealKS() {
   document.getElementById('revealKSCost').textContent = fmtEuro(c.kostenMin) + ' – ' + fmtEuro(c.kostenMax);
   document.getElementById('guessStepKS').style.display = 'none';
   document.getElementById('revealKSBox').classList.add('show');
+
+  const realityBox = document.getElementById('realityBox');
+  if (c.realBetrag) {
+    document.getElementById('realityAiVal').textContent = fmtEuro(c.kostenMin) + '–' + fmtEuro(c.kostenMax);
+    document.getElementById('realityRealVal').textContent = fmtEuro(c.realBetrag);
+    document.getElementById('realityText').innerHTML =
+      'Laut <strong style="color:var(--white)">' + c.realQuelle + '</strong> lag der tatsächliche Schaden bei ' + fmtEuro(c.realBetrag) + ' — mehr als das ' +
+      Math.round(c.realBetrag / c.kostenMax) + '-fache der KI-Schätzung. ' + c.realErklaerung +
+      ' Genau deshalb ersetzt CrashGuide bei erheblichen Schäden keine echte Begutachtung — sondern hilft dir, die richtige Entscheidung zu treffen, ob sich Versicherung oder Werkstatt/Gutachter lohnt.';
+    realityBox.classList.add('show');
+  } else {
+    realityBox.classList.remove('show');
+  }
 
   if (c.funnel === 'unfall') {
     document.getElementById('guessStepRS').style.display = 'block';
