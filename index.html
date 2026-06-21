@@ -674,6 +674,12 @@ section{padding:48px 0}
       <h2>So viel kostet die Reparatur voraussichtlich</h2>
     </div>
     <div class="case-detail-img" id="vrImg" style="max-width:560px;margin:0 auto 16px"></div>
+
+    <div id="vrSafetyBanner" style="display:none;background:var(--signal-dim);border:1.5px solid var(--signal);border-radius:8px;padding:14px 16px;margin:0 auto 16px;max-width:560px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--signal);font-weight:700;margin-bottom:6px">⚠ Sicherheitsrelevanter Schaden</div>
+      <div style="font-size:12.5px;color:var(--grey-light);line-height:1.7">Bei Schäden dieser Größenordnung zeigt ein Foto keine verdeckten Schäden an Struktur, Halterungen oder Fahrwerk. <strong style="color:var(--white)">Lass das Fahrzeug vor der Weiterfahrt von einer Werkstatt prüfen</strong> — diese App ersetzt keine sicherheitsrelevante Begutachtung.</div>
+    </div>
+
     <div class="breakdown" style="max-width:560px;margin:0 auto">
       <h3 id="vrCost" style="font-family:var(--font-display);font-size:24px;color:var(--primary);text-align:center;margin-bottom:14px"></h3>
       <p id="vrText" style="font-size:13.5px;color:var(--grey-light);line-height:1.7"></p>
@@ -1220,6 +1226,7 @@ function berechne() {
 
 
 function resetApp() {
+  localStorage.removeItem(CG_RESULT_KEY);
   document.getElementById('result').style.display = 'none';
   document.getElementById('volumenResult').style.display = 'none';
   document.getElementById('inputSection').style.display = 'none';
@@ -1333,8 +1340,68 @@ async function tryRestorePaidAnalysis() {
   } else {
     berechne();
   }
+  saveResultSnapshot();
   cleanPaidUrl();
   window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ── Persistentes Ergebnis-Backup ──
+// Anders als CG_PENDING_KEY (Einmal-Nutzung vor Zahlung) bleibt dieser Snapshot
+// erhalten, bis der Nutzer aktiv "Neue Prüfung" wählt. Schützt davor, ein bereits
+// bezahltes Ergebnis durch einen Seiten-Reload zu verlieren (z.B. wenn iOS Safari
+// beim PDF-Download/-Vorschau die Seite neu lädt).
+const CG_RESULT_KEY = 'cg_last_result';
+
+function saveResultSnapshot() {
+  const snapshot = {
+    funnel: cgIntroState.funnel,
+    photoBase64Arr: photoBase64Arr,
+    aiSchadenBetrag: aiSchadenBetrag, aiStufe: aiStufe, aiBeschreibung: aiBeschreibung,
+    aiBetragMin: aiBetragMin, aiBetragMax: aiBetragMax,
+    schadenBetrag: fieldVal('schadenBetrag'),
+    fahrzeugModell: fieldVal('fahrzeugModell'),
+    fahrzeugBaujahr: fieldVal('fahrzeugBaujahr'),
+    fahrzeugWert: fieldVal('fahrzeugWert'),
+    versicherer: fieldVal('versicherer'),
+    versArt: fieldVal('versArt'),
+    sfKlasse: fieldVal('sfKlasse'),
+    beitrag: fieldVal('beitrag'),
+    rhythmus: fieldVal('rhythmus'),
+    selbstbeteiligung: fieldVal('selbstbeteiligung'),
+    rabattschutz: document.querySelector('input[name="rs"]:checked') ? document.querySelector('input[name="rs"]:checked').value : 'nein',
+    ts: Date.now()
+  };
+  try { localStorage.setItem(CG_RESULT_KEY, JSON.stringify(snapshot)); } catch(e) { console.warn('Snapshot konnte nicht gespeichert werden:', e); }
+}
+
+function tryRestoreLastResult() {
+  const raw = localStorage.getItem(CG_RESULT_KEY);
+  if (!raw) return false;
+  let snap;
+  try { snap = JSON.parse(raw); } catch(e) { return false; }
+
+  photoBase64Arr = snap.photoBase64Arr || [];
+  aiSchadenBetrag = snap.aiSchadenBetrag; aiStufe = snap.aiStufe;
+  aiBeschreibung = snap.aiBeschreibung; aiBetragMin = snap.aiBetragMin; aiBetragMax = snap.aiBetragMax;
+  cgIntroState.funnel = snap.funnel;
+
+  document.getElementById('introSection').style.display = 'none';
+  document.getElementById('inputSection').style.display = 'none';
+  if (document.getElementById('schadenBetrag')) document.getElementById('schadenBetrag').value = snap.schadenBetrag || '';
+
+  if (snap.funnel === 'unfall') {
+    ['fahrzeugModell','fahrzeugBaujahr','fahrzeugWert','versicherer','versArt','sfKlasse','beitrag','rhythmus','selbstbeteiligung'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && snap[id] !== undefined && snap[id] !== '') el.value = snap[id];
+    });
+    if (snap.rabattschutz === 'ja') { document.getElementById('rsJa').checked = true; updateRS(); }
+    berechne();
+  } else {
+    showVolumenResult();
+  }
+  toast('Dein letztes Ergebnis wurde wiederhergestellt ✓', true);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  return true;
 }
 
 function showVolumenResult() {
@@ -1349,6 +1416,9 @@ function showVolumenResult() {
   } else {
     img.style.display = 'none';
   }
+  const istSicherheitsrelevant = (aiStufe === 'gross' || aiStufe === 'total')
+    || (!aiStufe && betrag >= SICHERHEITS_SCHWELLE);
+  document.getElementById('vrSafetyBanner').style.display = istSicherheitsrelevant ? 'block' : 'none';
   document.getElementById('volumenResult').style.display = 'block';
 }
 
@@ -1597,6 +1667,26 @@ function exportVolumenPDF() {
   doc.text(descLines, margin, y);
   y += descLines.length * 5.5 + 10;
 
+  // ── SICHERHEITSHINWEIS (nur bei gross/total) ──
+  const COL_SIGNAL = [178, 58, 52];
+  const betragFuerCheck = aiSchadenBetrag || parseFloat(document.getElementById('schadenBetrag').value) || 0;
+  const istSicherheitsrelevantPdf = (aiStufe === 'gross' || aiStufe === 'total') || (!aiStufe && betragFuerCheck >= SICHERHEITS_SCHWELLE);
+  if (istSicherheitsrelevantPdf) {
+    doc.setFillColor(250,235,233);
+    doc.rect(margin - 2, y - 3, contentW + 4, 20, 'F');
+    doc.setDrawColor(COL_SIGNAL[0],COL_SIGNAL[1],COL_SIGNAL[2]);
+    doc.setLineWidth(0.4);
+    doc.line(margin - 2, y - 3, margin - 2, y + 17);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7);
+    setColor(COL_SIGNAL);
+    doc.text('⚠ SICHERHEITSRELEVANTER SCHADEN', margin + 2, y + 1);
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+    setColor([110,40,35]);
+    const safetyTxt = 'Ein Foto zeigt keine verdeckten Schaeden an Struktur, Halterungen oder Fahrwerk. Lass das Fahrzeug vor der Weiterfahrt von einer Werkstatt pruefen.';
+    doc.text(doc.splitTextToSize(safetyTxt, contentW - 4), margin + 2, y + 7);
+    y += 24;
+  }
+
   // ── DISCLAIMER ──
   doc.setFillColor(251,243,224);
   doc.rect(margin - 2, y - 3, contentW + 4, 20, 'F');
@@ -1819,7 +1909,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('fahrzeugWert').addEventListener('input', () => {
     if (document.getElementById('schadenBetrag').value) updateWertminderung();
   });
-  tryRestorePaidAnalysis();
+  if (new URLSearchParams(window.location.search).get('paid') === '1') {
+    tryRestorePaidAnalysis();
+  } else {
+    tryRestoreLastResult();
+  }
 });
 </script>
 </body>
